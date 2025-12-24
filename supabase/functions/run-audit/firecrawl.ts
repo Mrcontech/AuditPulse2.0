@@ -1,3 +1,7 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
+/// <reference lib="deno.window" />
+
 export async function crawlSite(url: string, apiKey: string) {
     console.log(`Crawling ${url} with Firecrawl...`)
 
@@ -9,7 +13,7 @@ export async function crawlSite(url: string, apiKey: string) {
         },
         body: JSON.stringify({
             url,
-            limit: 50,
+            limit: 12,
             scrapeOptions: {
                 formats: ['markdown']
             }

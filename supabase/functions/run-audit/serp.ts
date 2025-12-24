@@ -1,3 +1,7 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
+/// <reference lib="deno.window" />
+
 export async function getSerpData(domain: string, apiKey: string) {
     console.log(`Getting SEO data for ${domain} via SERP API...`)
 

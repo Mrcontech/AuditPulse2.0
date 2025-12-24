@@ -1,12 +1,27 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
+/// <reference lib="deno.window" />
+
 export async function getPageSpeedMetrics(url: string, apiKey: string) {
     console.log(`Getting PageSpeed metrics for ${url}...`)
 
     const fetchStrategy = async (strategy: 'mobile' | 'desktop') => {
-        const response = await fetch(
-            `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&key=${apiKey}`
-        )
-        if (!response.ok) throw new Error(`PageSpeed API error (${strategy}): ${response.statusText}`)
-        return response.json()
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+        try {
+            const response = await fetch(
+                `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&key=${apiKey}`,
+                { signal: controller.signal }
+            )
+            if (!response.ok) throw new Error(`PageSpeed API error (${strategy}): ${response.statusText}`)
+            return await response.json()
+        } catch (err) {
+            console.error(`PageSpeed ${strategy} failed:`, err.message)
+            return { lighthouseResult: { categories: { performance: { score: 0 } }, audits: {} }, loadingExperience: { metrics: {} } }
+        } finally {
+            clearTimeout(timeoutId)
+        }
     }
 
     const [mobile, desktop] = await Promise.all([

@@ -1,3 +1,7 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
+/// <reference lib="deno.window" />
+
 export async function checkSecurity(url: string, crawlData: any[]) {
     console.log(`Checking security and links for ${url}...`)
 

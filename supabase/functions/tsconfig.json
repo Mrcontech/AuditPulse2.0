@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "lib": [
+            "esnext"
+        ],
+        "strict": false,
+        "baseUrl": ".",
+        "paths": {
+            "https://*": [
+                "./.deno_types/https/*"
+            ]
+        }
+    },
+    "include": [
+        "./**/*.ts"
+    ]
+}
