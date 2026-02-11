@@ -1,7 +1,7 @@
 import { ExternalLink, TrendingUp, Target, AlertTriangle, Lightbulb, Users, ShieldAlert } from "lucide-react";
 
 export const IntelligenceTab = ({ results }: { results: any }) => {
-    if (!results) return <div className="text-sm text-muted-foreground">No intelligence data available.</div>;
+    if (!results) return <div className="text-sm text-muted-foreground">No strategic data available.</div>;
 
     const swot = results.swot_analysis;
 
@@ -11,7 +11,7 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
             <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                 <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-medium text-white">Market Intelligence</h3>
+                    <h3 className="text-sm font-medium text-white">Strategic Growth Insights</h3>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                     {results.market_insights || "Generating niche-specific insights..."}

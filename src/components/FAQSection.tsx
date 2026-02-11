@@ -26,7 +26,7 @@ const FAQSection = () => {
     },
     {
       question: "How is this different from other audit tools?",
-      answer: "Our AI copilot goes beyond technical scanning. We combine website analysis with market research, competitor insights, and business opportunity identification. Plus, our reports focus on actionable recommendations rather than just technical data dumps."
+      answer: "Our AI assistant goes beyond technical scanning. We combine website analysis with market research, competitor insights, and business opportunity identification. Plus, our reports focus on actionable recommendations rather than just technical data dumps."
     },
     {
       question: "Can you audit e-commerce websites?",
@@ -57,8 +57,8 @@ const FAQSection = () => {
         <div className="animate-fade-in">
           <Accordion type="single" collapsible className="w-full space-y-4">
             {faqs.map((faq, index) => (
-              <AccordionItem 
-                key={index} 
+              <AccordionItem
+                key={index}
                 value={`item-${index}`}
                 className="bg-card border border-border rounded-lg px-6 hover:border-community-blue/50 transition-colors"
               >

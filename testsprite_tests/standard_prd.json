@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "project": "AuditPulse",
+    "date": "2026-01-21",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "AuditPulse is an AI-powered website audit platform that delivers comprehensive insights into website performance, SEO, security, and market positioning to help businesses optimize their web presence.",
+  "core_goals": [
+    "Provide a comprehensive, AI-driven audit of any website URL covering technical, performance, SEO, security, and market aspects.",
+    "Deliver actionable insights through integrated data sources including Google PageSpeed, SERP analysis, and AI market research.",
+    "Ensure real-time tracking and management of multiple audits via a user-friendly dashboard.",
+    "Maintain robust error handling and reliability despite dependencies on multiple external APIs."
+  ],
+  "key_features": [
+    "AI-Powered Website Audit that scans URLs for in-depth technical and content issues.",
+    "Performance Analysis leveraging Google PageSpeed Insights to provide mobile and desktop web metrics.",
+    "SEO and Market Research using SERP and Tavily APIs to analyze keywords, competitor strategies, and industry trends.",
+    "Security Checks including SSL validation, header inspection, and broken link analysis for improved site integrity.",
+    "Dashboard for managing multiple audits, displaying real-time progress and results.",
+    "Backend integration via Supabase Edge Functions ensuring scalable and reliable audit orchestration.",
+    "Stripe Checkout integration for plan upgrades through a seamless payment session creation process."
+  ],
+  "user_flow_summary": [
+    "User submits a website URL and initiates an audit with a unique audit ID via the run-audit API endpoint.",
+    "The system orchestrates multiple sub-tasks: deep crawling of the target website, gathering Google PageSpeed metrics, and running AI-driven competitor and niche analysis.",
+    "Audit results, including performance metrics, SEO scores, security reports, and market insights, are collated and stored in the Supabase database.",
+    "Users access a dashboard to view audit status in real time and review detailed reports upon completion.",
+    "For upgrading subscription plans, users trigger the create-checkout API to begin Stripe payment checkout sessions.",
+    "In case of API timeouts or failures during audit, the system updates audit status accordingly and provides transparent error feedback."
+  ],
+  "validation_criteria": [
+    "Correct execution of comprehensive website audits covering crawling, performance, SEO, security, and AI market analysis.",
+    "Accurate retrieval and integration of external data from Firecrawl, Google PageSpeed Insights, SERP, Tavily, and Gemini AI.",
+    "Reliable real-time status updates and audit result storage in Supabase database.",
+    "Robust error handling to capture and manage failures or timeouts from external services, updating audit status to failed where appropriate.",
+    "Successful creation and redirection via Stripe checkout sessions for plan upgrade scenarios.",
+    "End-to-end testing of user workflows from audit initiation through results review and subscription upgrade processes."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React",
+      "Vite",
+      "Supabase Edge Functions",
+      "PostgreSQL",
+      "Tailwind CSS"
+    ],
+    "features": [
+      {
+        "name": "run-audit",
+        "description": "Orchestrates a comprehensive website audit including crawling, performance metrics, SEO research, and AI-driven market analysis.",
+        "files": [
+          "supabase/functions/run-audit/index.ts",
+          "supabase/functions/run-audit/firecrawl.ts",
+          "supabase/functions/run-audit/gemini.ts",
+          "supabase/functions/run-audit/pagespeed.ts",
+          "supabase/functions/run-audit/security.ts",
+          "supabase/functions/run-audit/serp.ts",
+          "supabase/functions/run-audit/tavily.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "AuditPulse run-audit API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/run-audit": {
+              "post": {
+                "summary": "Run a website audit",
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "format": "url"
+                          },
+                          "auditId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "url",
+                          "auditId"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Audit started successfully",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "success": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "500": {
+                    "description": "Audit failed",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "error": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "create-checkout",
+        "description": "Creates a Stripe checkout session for plan upgrades.",
+        "files": [
+          "supabase/functions/create-checkout/index.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "AuditPulse create-checkout API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/create-checkout": {
+              "post": {
+                "summary": "Create stripe checkout",
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "price_id": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "price_id"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Checkout session created",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

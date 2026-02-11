@@ -17,11 +17,11 @@ export const SeoTab = ({ results }: { results: any }) => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
                 <div className="bg-card p-5">
                     <span className="text-xs text-muted-foreground block mb-1">SEO Score</span>
-                    <span className="text-2xl font-semibold text-white tabular-nums">{results.seo_score ?? "—"}</span>
+                    <span className="text-2xl font-semibold text-white tabular-nums">{results.seo_score ?? "-"}</span>
                 </div>
                 <div className="bg-card p-5">
                     <span className="text-xs text-muted-foreground block mb-1">Total Results</span>
-                    <span className="text-2xl font-semibold text-white tabular-nums">{results.total_results?.toLocaleString() ?? "—"}</span>
+                    <span className="text-2xl font-semibold text-white tabular-nums">{results.total_results?.toLocaleString() ?? "-"}</span>
                 </div>
                 <div className="bg-card p-5">
                     <span className="text-xs text-muted-foreground block mb-1">Keywords Found</span>

@@ -84,9 +84,17 @@ export const AuditList = () => {
                         {/* Mobile Layout */}
                         <div className="sm:hidden p-4 space-y-3">
                             <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-white truncate">{audit.domain}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{audit.url}</p>
+                                <div className="min-w-0 flex-1 flex items-center gap-3">
+                                    <img
+                                        src={`https://www.google.com/s2/favicons?domain=${audit.domain}&sz=64`}
+                                        alt=""
+                                        className="w-8 h-8 rounded-md bg-white/5 p-1 shrink-0"
+                                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    />
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium text-white truncate">{audit.domain}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{audit.url}</p>
+                                    </div>
                                 </div>
                                 {(audit.status === "complete" || audit.status === "failed") && (
                                     <Link to={`/audit/${audit.id}`}>
@@ -109,9 +117,17 @@ export const AuditList = () => {
 
                         {/* Desktop Layout */}
                         <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 items-center">
-                            <div className="col-span-5 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{audit.domain}</p>
-                                <p className="text-xs text-muted-foreground truncate">{audit.url}</p>
+                            <div className="col-span-5 min-w-0 flex items-center gap-3">
+                                <img
+                                    src={`https://www.google.com/s2/favicons?domain=${audit.domain}&sz=64`}
+                                    alt=""
+                                    className="w-8 h-8 rounded-md bg-white/5 p-1 shrink-0"
+                                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium text-white truncate">{audit.domain}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{audit.url}</p>
+                                </div>
                             </div>
                             <div className="col-span-2">
                                 <div className={`flex items-center gap-1.5 ${status.color}`}>

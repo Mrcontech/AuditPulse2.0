@@ -17,8 +17,8 @@ const heroData = {
             ],
         },
     },
-    title: "AI-Powered Website Audit Copilot for Modern Businesses",
-    subtitle: "Instantly scan your site, detect broken links, identify content gaps, and discover market opportunities with AI precision.",
+    title: "AI-Powered Website Audit Strategist for Modern Businesses",
+    subtitle: "Scan your website, track your progress, and outsmart competitors using our smart AI assistant.",
 };
 
 export const Hero = () => {

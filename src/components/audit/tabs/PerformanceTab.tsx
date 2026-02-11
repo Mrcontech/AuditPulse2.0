@@ -63,7 +63,7 @@ export const PerformanceTab = ({ results }: { results: any }) => {
                                     </RadialBarChart>
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-2xl font-semibold text-white">{m.value ?? "—"}</span>
+                                    <span className="text-2xl font-semibold text-white">{m.value ?? "-"}</span>
                                     <span className="text-xs text-muted-foreground">{m.unit}</span>
                                 </div>
                             </div>

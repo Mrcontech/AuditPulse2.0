@@ -21,6 +21,11 @@ import { IntelligenceTab } from "@/components/audit/tabs/IntelligenceTab";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { AuditPDFReport } from "@/components/audit/AuditPDFReport";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { ChecklistTab } from "@/components/audit/tabs/ChecklistTab";
+import { HistoryTab } from "@/components/audit/tabs/HistoryTab";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ListTodo, TrendingUp } from "lucide-react";
 
 export default function Audit() {
     const { id } = useParams();
@@ -47,7 +52,7 @@ export default function Audit() {
         }
     });
 
-    const { data: results, isLoading: isResultsLoading } = useQuery({
+    const { data: results, isLoading: isResultsLoading, refetch: refetchResults } = useQuery({
         queryKey: ["audit-results", id],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -59,6 +64,58 @@ export default function Audit() {
         },
         enabled: !!audit && audit.status === "complete",
     });
+
+    const { data: historyData } = useQuery({
+        queryKey: ["audit-history", audit?.domain],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("audit_results")
+                .select(`
+                    id, 
+                    performance_score, 
+                    seo_score, 
+                    security_score,
+                    audit_id,
+                    audits!inner(domain, created_at)
+                `)
+                .eq("audits.domain", audit?.domain)
+                .order("created_at", { referencedTable: 'audits', ascending: true });
+
+            if (error) throw error;
+            return data;
+        },
+        enabled: !!audit?.domain,
+    });
+
+    const queryClient = useQueryClient();
+    const toggleTaskMutation = useMutation({
+        mutationFn: async ({ taskTitle, currentCompleted }: { taskTitle: string; currentCompleted: string[] }) => {
+            const isCompleted = currentCompleted.includes(taskTitle);
+            const newCompleted = isCompleted
+                ? currentCompleted.filter(t => t !== taskTitle)
+                : [...currentCompleted, taskTitle];
+
+            const { error } = await supabase
+                .from("audit_results")
+                .update({ completed_tasks: newCompleted })
+                .eq("audit_id", id);
+
+            if (error) throw error;
+            return newCompleted;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["audit-results", id] });
+        },
+        onError: (error: any) => {
+            toast.error("Failed to update progress: " + error.message);
+        }
+    });
+
+    const handleToggleTask = (taskTitle: string) => {
+        if (!results) return;
+        const currentCompleted = (results.completed_tasks as string[]) || [];
+        toggleTaskMutation.mutate({ taskTitle, currentCompleted });
+    };
 
     const handleRetry = async () => {
         if (!audit) return;
@@ -171,12 +228,12 @@ export default function Audit() {
                                 </h3>
 
                                 <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-8 h-10 flex items-center justify-center">
-                                    {audit.progress_label || "Initializing engine and starting crawl..."}
+                                    {audit.progress_label || "Starting analysis and scanning pages..."}
                                 </p>
 
                                 <div className="max-w-md mx-auto space-y-3">
                                     <div className="flex justify-between text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                                        <span>Engine Progress</span>
+                                        <span>Analysis Progress</span>
                                         <span>{audit.progress || 10}%</span>
                                     </div>
                                     <div className="bg-white/[0.04] h-1.5 rounded-full overflow-hidden border border-white/[0.03]">
@@ -209,7 +266,15 @@ export default function Audit() {
                                 <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Performance</TabsTrigger>
                                 <TabsTrigger value="seo" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">SEO</TabsTrigger>
                                 <TabsTrigger value="security" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Security</TabsTrigger>
-                                <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Intelligence</TabsTrigger>
+                                <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Growth Insights</TabsTrigger>
+                                <TabsTrigger value="history" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                    <TrendingUp className="w-3.5 h-3.5" />
+                                    History
+                                </TabsTrigger>
+                                <TabsTrigger value="checklist" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                    <ListTodo className="w-3.5 h-3.5" />
+                                    Checklist
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="overview" className="space-y-6 outline-none">
@@ -258,15 +323,15 @@ export default function Audit() {
                                         <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <span className="text-xs text-muted-foreground block mb-1">Load Time</span>
-                                                <span className="text-lg font-semibold text-white">{results?.load_time ? `${results.load_time}s` : "—"}</span>
+                                                <span className="text-lg font-semibold text-white">{results?.load_time ? `${results.load_time}s` : "-"}</span>
                                             </div>
                                             <div>
                                                 <span className="text-xs text-muted-foreground block mb-1">Blocking</span>
-                                                <span className="text-lg font-semibold text-white">{results?.total_blocking_time ? `${results.total_blocking_time}ms` : "—"}</span>
+                                                <span className="text-lg font-semibold text-white">{results?.total_blocking_time ? `${results.total_blocking_time}ms` : "-"}</span>
                                             </div>
                                             <div>
                                                 <span className="text-xs text-muted-foreground block mb-1">CLS</span>
-                                                <span className="text-lg font-semibold text-white">{results?.cumulative_layout_shift ?? "—"}</span>
+                                                <span className="text-lg font-semibold text-white">{results?.cumulative_layout_shift ?? "-"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -294,7 +359,7 @@ export default function Audit() {
                                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                                     <h3 className="text-sm font-medium text-white mb-3">Executive Summary</h3>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
-                                        {results?.executive_summary || "Analysis complete. Review the individual tabs for detailed insights on performance metrics, SEO opportunities, security posture, and AI-powered recommendations."}
+                                        {results?.executive_summary || "Analysis complete. Review the individual tabs for detailed insights on performance metrics, SEO opportunities, security status, and AI-powered recommendations."}
                                     </p>
                                 </div>
                             </TabsContent>
@@ -313,6 +378,18 @@ export default function Audit() {
 
                             <TabsContent value="intelligence" className="outline-none">
                                 <IntelligenceTab results={results} />
+                            </TabsContent>
+
+                            <TabsContent value="history" className="outline-none">
+                                <HistoryTab history={historyData || []} />
+                            </TabsContent>
+
+                            <TabsContent value="checklist" className="outline-none">
+                                <ChecklistTab
+                                    recommendations={results?.strategic_recommendations || []}
+                                    completedTasks={(results?.completed_tasks as string[]) || []}
+                                    onToggleTask={handleToggleTask}
+                                />
                             </TabsContent>
                         </Tabs>
                     )}

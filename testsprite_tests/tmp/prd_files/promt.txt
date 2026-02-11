@@ -1,0 +1,86 @@
+{
+    "tech_stack": [
+        "TypeScript",
+        "Deno",
+        "Supabase Edge Functions",
+        "PostgreSQL",
+        "Gemini AI",
+        "Firecrawl",
+        "Tavily"
+    ],
+    "features": [
+        {
+            "name": "run-audit",
+            "description": "Main orchestrator for website audits. Initiates crawling, performance measurement, and AI analysis.",
+            "files": [
+                "supabase/functions/run-audit/index.ts"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "info": {
+                    "title": "AuditPulse run-audit API",
+                    "version": "1.0.0"
+                },
+                "servers": [
+                    {
+                        "url": "https://hmpvqhxiihrgwaebpkpw.supabase.co/functions/v1",
+                        "description": "Production Supabase Edge Functions"
+                    }
+                ],
+                "paths": {
+                    "/run-audit": {
+                        "post": {
+                            "summary": "Run a website audit",
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "url": {
+                                                    "type": "string",
+                                                    "format": "url",
+                                                    "example": "https://google.com"
+                                                },
+                                                "auditId": {
+                                                    "type": "string",
+                                                    "format": "uuid",
+                                                    "example": "deadbeef-dead-beef-dead-beefdeadbeef"
+                                                }
+                                            },
+                                            "required": [
+                                                "url",
+                                                "auditId"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Success",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "success": {
+                                                        "type": "boolean"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "500": {
+                                    "description": "Internal Server Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

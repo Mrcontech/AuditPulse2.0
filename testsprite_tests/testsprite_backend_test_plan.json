@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC001",
+    "title": "run a website audit successfully",
+    "description": "Test the /run-audit POST endpoint to verify that a website audit can be initiated successfully with valid url and auditId. Validate the response status 200 and success flag."
+  },
+  {
+    "id": "TC002",
+    "title": "handle audit failure gracefully",
+    "description": "Test the /run-audit POST endpoint with scenarios causing audit failure (e.g., invalid url, external API failure) and verify the response status 500 with appropriate error message."
+  },
+  {
+    "id": "TC003",
+    "title": "create stripe checkout session successfully",
+    "description": "Test the /create-checkout POST endpoint to verify that a Stripe checkout session is created successfully when a valid price_id is provided. Validate the response status 200 and presence of checkout url."
+  }
+]

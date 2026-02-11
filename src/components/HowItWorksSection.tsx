@@ -5,22 +5,22 @@ const HowItWorksSection = () => {
     {
       icon: Globe,
       title: "Enter Your URL",
-      description: "Simply paste your website URL and let our AI start the comprehensive analysis process."
+      description: "Paste your website URL (or a competitor's) and let our AI start the comprehensive analysis process."
     },
     {
       icon: Brain,
       title: "AI Analysis",
-      description: "Our advanced AI scans every page, analyzes content, checks technical aspects, and researches your market."
+      description: "Our AI assistant scans every page, analyzes content, checks Core Web Vitals, and researches your market."
     },
     {
       icon: FileText,
-      title: "Detailed Report",
-      description: "Receive a comprehensive audit report with actionable insights, prioritized recommendations, and competitive analysis."
+      title: "Detailed Report & Checklist",
+      description: "Receive a comprehensive audit with a prioritized Fix-It Checklist to track your implementation progress."
     },
     {
       icon: Rocket,
-      title: "Implement & Grow",
-      description: "Follow our step-by-step action plan to optimize your website and accelerate your business growth."
+      title: "Track, Compare & Grow",
+      description: "Use Historical Trend Charts and Competitor Battle Mode to see your progress and stay ahead of the competition."
     }
   ];
 

@@ -12,6 +12,7 @@ import Audit from "./pages/Audit";
 import Pricing from "./pages/Pricing";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
+import Compare from "./pages/Compare";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Audit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compare/:id1/:id2"
+            element={
+              <ProtectedRoute>
+                <Compare />
               </ProtectedRoute>
             }
           />

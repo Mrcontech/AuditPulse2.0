@@ -45,8 +45,8 @@ export const SecurityTab = ({ results }: { results: any }) => {
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className={`text-3xl font-semibold ${(results.security_score ?? 0) >= 80 ? 'text-green-400' :
-                                    (results.security_score ?? 0) >= 50 ? 'text-yellow-400' : 'text-red-400'
-                                }`}>{results.security_score ?? "—"}</span>
+                                (results.security_score ?? 0) >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>{results.security_score ?? "-"}</span>
                             <span className="text-xs text-muted-foreground">/100</span>
                         </div>
                     </div>

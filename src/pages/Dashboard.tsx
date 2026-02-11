@@ -9,11 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useState } from "react";
 import { toast } from "sonner";
+import { ComparisonModal } from "@/components/dashboard/ComparisonModal";
+import { Swords } from "lucide-react";
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [url, setUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+    const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
 
     const { data: stats, isLoading } = useQuery({
         queryKey: ["audits-stats"],
@@ -106,13 +110,39 @@ export default function Dashboard() {
                         <h3 className="text-sm font-medium text-white mb-3">Start New Audit</h3>
                         <form onSubmit={handleStartAudit} className="flex flex-col sm:flex-row gap-3">
                             <div className="relative flex-1">
-                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                {faviconUrl ? (
+                                    <img
+                                        src={faviconUrl}
+                                        alt=""
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-sm"
+                                        onError={() => setFaviconUrl(null)}
+                                    />
+                                ) : (
+                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                )}
                                 <Input
                                     type="text"
                                     placeholder="Enter website URL (e.g., example.com)"
                                     className="pl-9 bg-white/[0.02] border-white/[0.06]"
                                     value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setUrl(val);
+                                        // Simple domain extraction for favicon preview
+                                        if (val.includes('.')) {
+                                            try {
+                                                const urlToParse = val.startsWith('http') ? val : `https://${val}`;
+                                                const hostname = new URL(urlToParse).hostname;
+                                                if (hostname && hostname.includes('.')) {
+                                                    setFaviconUrl(`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`);
+                                                }
+                                            } catch (err) {
+                                                // Invalid URL while typing, keep previous or clear
+                                            }
+                                        } else if (!val) {
+                                            setFaviconUrl(null);
+                                        }
+                                    }}
                                     disabled={isSubmitting}
                                 />
                             </div>
@@ -125,8 +155,23 @@ export default function Dashboard() {
                                     </>
                                 )}
                             </Button>
+                            <div className="hidden sm:block border-l border-white/[0.06] mx-1" />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsCompareModalOpen(true)}
+                                className="border-blue-500/20 hover:border-blue-500/50 hover:bg-blue-500/5"
+                            >
+                                <Swords className="w-4 h-4 mr-2 text-blue-400" />
+                                Battle Mode
+                            </Button>
                         </form>
                     </div>
+
+                    <ComparisonModal
+                        isOpen={isCompareModalOpen}
+                        onClose={() => setIsCompareModalOpen(false)}
+                    />
 
                     {/* Stats Grid - Linear style with gap-px */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
