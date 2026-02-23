@@ -10,8 +10,15 @@ import {
     Download,
     ExternalLink,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    Info
 } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { PerformanceTab } from "@/components/audit/tabs/PerformanceTab";
@@ -23,9 +30,10 @@ import { AuditPDFReport } from "@/components/audit/AuditPDFReport";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { ChecklistTab } from "@/components/audit/tabs/ChecklistTab";
 import { HistoryTab } from "@/components/audit/tabs/HistoryTab";
+import { StrategyTab } from "@/components/audit/tabs/StrategyTab";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ListTodo, TrendingUp } from "lucide-react";
+import { ListTodo, TrendingUp, Sparkles } from "lucide-react";
 
 export default function Audit() {
     const { id } = useParams();
@@ -261,34 +269,58 @@ export default function Audit() {
                     ) : (
                         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                             {/* Linear-style underline tabs - scrollable on mobile */}
-                            <TabsList className="bg-transparent p-0 h-auto border-b border-white/[0.06] w-full flex gap-0 overflow-x-auto">
-                                <TabsTrigger value="overview" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Overview</TabsTrigger>
-                                <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Performance</TabsTrigger>
-                                <TabsTrigger value="seo" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">SEO</TabsTrigger>
-                                <TabsTrigger value="security" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Security</TabsTrigger>
-                                <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Growth Insights</TabsTrigger>
-                                <TabsTrigger value="history" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                    <TrendingUp className="w-3.5 h-3.5" />
-                                    History
-                                </TabsTrigger>
-                                <TabsTrigger value="checklist" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                    <ListTodo className="w-3.5 h-3.5" />
-                                    Checklist
-                                </TabsTrigger>
-                            </TabsList>
+                            <TooltipProvider>
+                                <TabsList className="bg-transparent p-0 h-auto border-b border-white/[0.06] w-full flex gap-0 overflow-x-auto">
+                                    <TabsTrigger value="overview" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Overview</TabsTrigger>
+
+                                    <TabsTrigger value="strategy" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                                        Strategy
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        Performance
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="seo" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        SEO
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="security" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        Security
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        Growth Insights
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="history" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        <TrendingUp className="w-3.5 h-3.5" />
+                                        History
+                                    </TabsTrigger>
+
+                                    <TabsTrigger value="checklist" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
+                                        <ListTodo className="w-3.5 h-3.5" />
+                                        Checklist
+                                    </TabsTrigger>
+                                </TabsList>
+                            </TooltipProvider>
 
                             <TabsContent value="overview" className="space-y-6 outline-none">
                                 {/* Scores Grid - Linear style */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
+                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
                                     {[
                                         { label: "Performance", value: results?.performance_score },
+                                        { label: "Mobile", value: results?.performance_score_mobile },
                                         { label: "SEO", value: results?.seo_score },
                                         { label: "Security", value: results?.security_score },
                                         { label: "Pages Crawled", value: results?.pages_crawled }
                                     ].map((metric, i) => (
                                         <div key={i} className="bg-card p-5 flex flex-col gap-1">
                                             <span className="text-xs text-muted-foreground">{metric.label}</span>
-                                            <span className="text-2xl font-semibold text-white tabular-nums">{metric.value ?? "—"}</span>
+                                            <span className="text-2xl font-semibold text-white tabular-nums">
+                                                {metric.value !== null && metric.value !== undefined ? Math.round(Number(metric.value)) : "—"}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -307,7 +339,7 @@ export default function Audit() {
                                                 <div key={i} className="space-y-1.5">
                                                     <div className="flex justify-between text-sm">
                                                         <span className="text-muted-foreground">{item.label}</span>
-                                                        <span className="font-medium text-white">{item.value}/100</span>
+                                                        <span className="font-medium text-white">{Math.round(Number(item.value))}/100</span>
                                                     </div>
                                                     <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
                                                         <div
@@ -320,18 +352,54 @@ export default function Audit() {
                                         </div>
 
                                         {/* Quick Stats */}
-                                        <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-3 gap-2 sm:gap-4 overflow-hidden">
                                             <div>
-                                                <span className="text-xs text-muted-foreground block mb-1">Load Time</span>
-                                                <span className="text-lg font-semibold text-white">{results?.load_time ? `${results.load_time}s` : "-"}</span>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1 cursor-help">
+                                                            Load Time
+                                                            <Info className="w-3 h-3 opacity-50" />
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top" className="max-w-[200px] text-[11px]">
+                                                        Load Time (LCP) measures when the largest content element becomes visible. Target: Under 2.5s.
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <span className="text-lg font-semibold text-white tabular-nums">
+                                                    {results?.lcp_desktop ? `${Number(results.lcp_desktop).toFixed(2)}s` : "-"}
+                                                </span>
                                             </div>
                                             <div>
-                                                <span className="text-xs text-muted-foreground block mb-1">Blocking</span>
-                                                <span className="text-lg font-semibold text-white">{results?.total_blocking_time ? `${results.total_blocking_time}ms` : "-"}</span>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1 cursor-help">
+                                                            Blocking
+                                                            <Info className="w-3 h-3 opacity-50" />
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top" className="max-w-[200px] text-[11px]">
+                                                        Blocking (INP) measures how quickly the page responds to user interactions like clicks.
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <span className="text-lg font-semibold text-white tabular-nums">
+                                                    {results?.inp_desktop ? `${Number(results.inp_desktop).toFixed(0)}ms` : "-"}
+                                                </span>
                                             </div>
                                             <div>
-                                                <span className="text-xs text-muted-foreground block mb-1">CLS</span>
-                                                <span className="text-lg font-semibold text-white">{results?.cumulative_layout_shift ?? "-"}</span>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1 cursor-help">
+                                                            CLS
+                                                            <Info className="w-3 h-3 opacity-50" />
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top" className="max-w-[200px] text-[11px]">
+                                                        Cumulative Layout Shift measures visual stability. It quantifies how much content unexpectedly shifts.
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <span className="text-lg font-semibold text-white tabular-nums">
+                                                    {results?.cls_desktop ? Number(results.cls_desktop).toFixed(3) : "-"}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -358,10 +426,37 @@ export default function Audit() {
                                 {/* Executive Summary */}
                                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                                     <h3 className="text-sm font-medium text-white mb-3">Executive Summary</h3>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        {results?.executive_summary || "Analysis complete. Review the individual tabs for detailed insights on performance metrics, SEO opportunities, security status, and AI-powered recommendations."}
-                                    </p>
+                                    <div className="space-y-4">
+                                        {typeof results?.executive_summary === 'object' ? (
+                                            <>
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Vision</p>
+                                                    <p className="text-sm text-white/90 leading-relaxed italic">
+                                                        "{results.executive_summary.vision}"
+                                                    </p>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Core Tension</p>
+                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.core_tension}</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Perfect Pitch</p>
+                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.one_line_pitch}</p>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                {results?.executive_summary || "Analysis complete. Review the individual tabs for detailed insights on performance metrics, SEO opportunities, security status, and AI-powered recommendations."}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
+                            </TabsContent>
+
+                            <TabsContent value="strategy" className="outline-none">
+                                <StrategyTab results={results} />
                             </TabsContent>
 
                             <TabsContent value="performance" className="outline-none">
@@ -387,8 +482,6 @@ export default function Audit() {
                             <TabsContent value="checklist" className="outline-none">
                                 <ChecklistTab
                                     recommendations={results?.strategic_recommendations || []}
-                                    completedTasks={(results?.completed_tasks as string[]) || []}
-                                    onToggleTask={handleToggleTask}
                                 />
                             </TabsContent>
                         </Tabs>

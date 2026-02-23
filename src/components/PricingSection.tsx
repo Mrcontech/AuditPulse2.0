@@ -20,21 +20,23 @@ const plans = [
         name: "Pro",
         monthlyPrice: "$19",
         yearlyPrice: "$190",
-        description: "For agencies and growing brands.",
+        description: "The ultimate toolkit for visionary founders ready to scale.",
         features: ["50 Website Audits/mo", "Fix-It Checklist Manager", "Historical Trend Charts", "Competitor Battle Mode", "Premium PDF Exports"],
         priceId: "price_pro_id",
         yearlyId: "price_pro_yearly_id",
+        dodoProductId: "pdt_0NYUy3n4rUmePuUR2J0eF",
         buttonText: "Get Pro",
         popular: true,
     },
     {
-        name: "Enterprise",
+        name: "Max",
         monthlyPrice: "$79",
         yearlyPrice: "$790",
-        description: "Bespoke solutions for large-scale operations.",
+        description: "For agencies and growing brands.",
         features: ["230 Website Audits/mo", "White-label Reports", "API Access", "Custom Audit Rules", "Dedicated Strategist"],
         priceId: "price_enterprise_id",
         yearlyId: "price_enterprise_yearly_id",
+        dodoProductId: "pdt_0NYUyObQDb5CrAtOTzZiJ",
         buttonText: "Contact Us",
     },
 ];
@@ -44,11 +46,15 @@ export const PricingSection = () => {
     const [isYearly, setIsYearly] = useState(false);
 
     const handleSubscribe = async (plan: typeof plans[0]) => {
-        const priceId = isYearly && plan.yearlyId ? plan.yearlyId : plan.priceId;
-
         if (plan.name === 'Starter') return;
 
-        setLoadingPlan(priceId);
+        const productId = plan.dodoProductId;
+        if (!productId) {
+            toast.error("Payment integration not configured for this plan");
+            return;
+        }
+
+        setLoadingPlan(productId);
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
@@ -56,11 +62,12 @@ export const PricingSection = () => {
                 return;
             }
 
-            const response = await supabase.functions.invoke('create-checkout', {
+            const response = await supabase.functions.invoke('dodo-checkout', {
                 body: {
-                    priceId,
+                    productId,
                     customerEmail: session.user.email,
-                    userId: session.user.id
+                    userId: session.user.id,
+                    returnUrl: `${window.location.origin}/dashboard`
                 }
             });
 
@@ -145,9 +152,9 @@ export const PricingSection = () => {
                                 variant={plan.popular ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => handleSubscribe(plan)}
-                                disabled={(loadingPlan === plan.priceId || loadingPlan === plan.yearlyId)}
+                                disabled={loadingPlan === plan.dodoProductId}
                             >
-                                {((loadingPlan === plan.priceId || loadingPlan === plan.yearlyId) && plan.name !== 'Starter') ? <Loader2 className="w-4 h-4 animate-spin" /> : plan.buttonText}
+                                {(loadingPlan === plan.dodoProductId && plan.name !== 'Starter') ? <Loader2 className="w-4 h-4 animate-spin" /> : plan.buttonText}
                             </Button>
                         </div>
                     ))}

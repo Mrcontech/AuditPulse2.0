@@ -3,7 +3,9 @@ import { ExternalLink, TrendingUp, Target, AlertTriangle, Lightbulb, Users, Shie
 export const IntelligenceTab = ({ results }: { results: any }) => {
     if (!results) return <div className="text-sm text-muted-foreground">No strategic data available.</div>;
 
-    const swot = results.swot_analysis;
+    const swot = results.competitive_edge?.swot || results.swot_analysis || { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+    const edge = results.competitive_edge || {};
+    const positioning = results.market_positioning || {};
 
     return (
         <div className="space-y-6">
@@ -11,15 +13,15 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
             <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                 <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-medium text-white">Strategic Growth Insights</h3>
+                    <h3 className="text-sm font-medium text-white">Strategic Market Intelligence</h3>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                    {results.market_insights || "Generating niche-specific insights..."}
+                    {results.market_insights || positioning.category_design || "Generating niche-specific insights..."}
                 </p>
-                {results.market_gap && (
+                {(edge.blue_ocean_opportunity || results.market_gap) && (
                     <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded-md">
-                        <span className="text-xs font-medium text-blue-400 block mb-1">Winning Strategy</span>
-                        <p className="text-xs text-white/80">{results.market_gap}</p>
+                        <span className="text-xs font-medium text-blue-400 block mb-1">Blue Ocean Opportunity</span>
+                        <p className="text-xs text-white/80">{edge.blue_ocean_opportunity || results.market_gap}</p>
                     </div>
                 )}
             </div>
@@ -102,17 +104,17 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
                                         <ExternalLink className="w-3.5 h-3.5" />
                                     </a>
                                 </div>
-                                <p className="text-xs text-muted-foreground line-clamp-2">{comp.description}</p>
+                                <p className="text-xs text-muted-foreground">{comp.description}</p>
                             </div>
                         ))}
                         {(!results.competitor_analysis || results.competitor_analysis.length === 0) && (
                             <p className="text-sm text-muted-foreground">Researching competition landscape...</p>
                         )}
                     </div>
-                    {results.competitive_gap && (
+                    {(edge.vulnerability_analysis || results.competitive_gap) && (
                         <div className="mt-4 p-3 bg-purple-500/5 border border-purple-500/20 rounded-md">
-                            <span className="text-xs font-medium text-purple-400 block mb-1">Competitive Gap</span>
-                            <p className="text-xs text-white/80">{results.competitive_gap}</p>
+                            <span className="text-xs font-medium text-purple-400 block mb-1">Vulnerability Analysis</span>
+                            <p className="text-xs text-white/80">{edge.vulnerability_analysis || results.competitive_gap}</p>
                         </div>
                     )}
                 </div>
@@ -133,8 +135,8 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
                                 className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] -mx-2 px-2 rounded transition-colors"
                             >
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-white truncate">{trend.title}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{trend.url}</p>
+                                    <p className="text-sm font-medium text-white">{trend.title}</p>
+                                    <p className="text-xs text-muted-foreground">{trend.url}</p>
                                 </div>
                                 <ExternalLink className="w-3.5 h-3.5 text-muted-foreground ml-2 shrink-0" />
                             </a>

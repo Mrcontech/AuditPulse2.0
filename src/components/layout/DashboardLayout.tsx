@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     LayoutDashboard,
@@ -15,11 +15,53 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { UsageCard } from "../dashboard/UsageCard";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+    const [profile, setProfile] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('audits_this_month, subscription_tier')
+                    .eq('id', session.user.id)
+                    .single();
+                setProfile(data);
+            }
+        };
+        fetchProfile();
+
+        // Subscribe to profile changes for real-time usage updates
+        const channel = supabase
+            .channel('profile-usage')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles'
+            }, (payload) => {
+                setProfile(payload.new);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    const getLimit = (tier: string) => {
+        switch (tier?.toLowerCase()) {
+            case 'pro': return 50;
+            case 'max': return 230;
+            default: return 2;
+        }
+    };
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -70,6 +112,17 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                         );
                     })}
                 </nav>
+
+                {/* Credits Section */}
+                {profile && (
+                    <div className="px-5 py-4">
+                        <UsageCard
+                            used={profile.audits_this_month || 0}
+                            limit={getLimit(profile.subscription_tier)}
+                            tier={profile.subscription_tier || 'free'}
+                        />
+                    </div>
+                )}
 
                 {/* User Section */}
                 <div className="p-3 border-t border-white/[0.06]">
@@ -126,6 +179,18 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                                 );
                             })}
                         </nav>
+
+                        {/* Mobile Credits Section */}
+                        {profile && (
+                            <div className="px-5 py-4">
+                                <UsageCard
+                                    used={profile.audits_this_month || 0}
+                                    limit={getLimit(profile.subscription_tier)}
+                                    tier={profile.subscription_tier || 'free'}
+                                />
+                            </div>
+                        )}
+
                         <div className="p-3 border-t border-white/[0.06]">
                             <button
                                 onClick={handleLogout}
@@ -155,6 +220,23 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                             />
                         </div>
                     </div>
+
+                    {/* Header Credits Display */}
+                    {profile && (
+                        <div className="flex items-center gap-3 px-3 sm:px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06]">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium leading-none mb-0.5">
+                                    Audits Used
+                                </span>
+                                <span className="text-xs font-semibold text-white leading-none">
+                                    {profile.audits_this_month || 0} / {getLimit(profile.subscription_tier)}
+                                </span>
+                            </div>
+                            <div className="w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center border border-white/[0.06]">
+                                <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                        </div>
+                    )}
                 </header>
 
                 {/* Page Content */}
