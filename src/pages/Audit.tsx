@@ -201,14 +201,14 @@ export default function Audit() {
                 <div className="relative z-10 p-6 md:p-8 space-y-8 max-w-6xl">
                     {/* Header - Linear style minimal */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="space-y-3">
+                        <div className="space-y-3 min-w-0">
                             <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-white transition-colors text-sm">
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </Link>
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-semibold text-white tracking-tight">{audit.domain}</h1>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight break-all">{audit.domain}</h1>
                                 <span className={cn(
-                                    "px-2 py-0.5 rounded text-xs font-medium",
+                                    "px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium shrink-0",
                                     audit.status === "complete"
                                         ? "bg-green-500/10 text-green-400"
                                         : "bg-white/5 text-muted-foreground"
@@ -216,9 +216,9 @@ export default function Audit() {
                                     {audit.status}
                                 </span>
                             </div>
-                            <a href={audit.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white transition-colors">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                {audit.url}
+                            <a href={audit.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-white transition-colors break-all">
+                                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate sm:whitespace-normal">{audit.url}</span>
                             </a>
                         </div>
 
@@ -226,9 +226,10 @@ export default function Audit() {
                             <PDFDownloadLink
                                 document={<AuditPDFReport audit={audit} results={results} />}
                                 fileName={`audit-${audit.domain}.pdf`}
+                                className="w-full md:w-auto"
                             >
                                 {({ loading }) => (
-                                    <Button variant="outline" size="sm" disabled={loading}>
+                                    <Button variant="outline" size="sm" disabled={loading} className="w-full md:w-auto">
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
                                         Export PDF
                                     </Button>
@@ -238,27 +239,27 @@ export default function Audit() {
                     </div>
 
                     {isPending ? (
-                        <div className="border border-white/[0.06] rounded-lg p-12 text-center relative overflow-hidden">
+                        <div className="border border-white/[0.06] rounded-lg p-6 sm:p-12 text-center relative overflow-hidden">
                             {/* Animated background glow */}
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent)] animate-pulse" />
 
                             <div className="relative z-10">
-                                <div className="relative w-16 h-16 mx-auto mb-6">
+                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-6">
                                     <div className="absolute inset-0 rounded-full border-2 border-white/5" />
                                     <div className="absolute inset-0 rounded-full border-t-2 border-white/40 animate-spin" />
-                                    <Loader2 className="absolute inset-0 w-8 h-8 m-auto text-white/20 animate-pulse" />
+                                    <Loader2 className="absolute inset-0 w-6 h-6 sm:w-8 sm:h-8 m-auto text-white/20 animate-pulse" />
                                 </div>
 
-                                <h3 className="text-xl font-medium text-white mb-2">
+                                <h3 className="text-lg sm:text-xl font-medium text-white mb-2">
                                     {audit.status === 'crawling' ? 'Deep Crawl in Progress' : 'AI Analysis Underway'}
                                 </h3>
 
-                                <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-8 h-10 flex items-center justify-center">
+                                <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto mb-8 h-10 flex items-center justify-center">
                                     {audit.progress_label || "Starting analysis and scanning pages..."}
                                 </p>
 
                                 <div className="max-w-md mx-auto space-y-3">
-                                    <div className="flex justify-between text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                                    <div className="flex justify-between text-[10px] sm:text-xs font-mono text-muted-foreground uppercase tracking-widest">
                                         <span>Analysis Progress</span>
                                         <span>{audit.progress || 10}%</span>
                                     </div>
@@ -269,17 +270,17 @@ export default function Audit() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-muted-foreground italic">
-                                        This usually takes ~{Math.ceil((avgDuration || 180) / 60)} minutes. Stay tuned for your results.
+                                        This usually takes ~{Math.ceil((avgDuration || 180) / 60)} minutes. Stay tuned.
                                     </p>
                                 </div>
                             </div>
                         </div>
                     ) : audit.status === 'failed' ? (
-                        <div className="border border-destructive/20 rounded-lg p-12 text-center">
+                        <div className="border border-destructive/20 rounded-lg p-6 sm:p-12 text-center">
                             <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-white mb-2">Analysis Failed</h3>
-                            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">{audit.error_message || "An unexpected error occurred."}</p>
-                            <Button variant="outline" onClick={handleRetry} disabled={isRetrying}>
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-6 max-w-md mx-auto">{audit.error_message || "An unexpected error occurred."}</p>
+                            <Button variant="outline" onClick={handleRetry} disabled={isRetrying} className="w-full sm:w-auto">
                                 {isRetrying && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                                 Retry
                             </Button>

@@ -59,8 +59,8 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
         }
     }
 
-    // Single attempt with 90s budget is more effective than multiple short attempts
-    const desktop = await fetchStrategy('desktop');
+    // Only fetch mobile strategy as requested by the user ("just show the mobile metrics not desktop again")
+    const mobile = await fetchStrategy('mobile');
 
     const extract = (data: any) => {
         const lighthouse = data.lighthouseResult?.audits || {};
@@ -81,12 +81,12 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
         };
     }
 
-    const desktopResults = extract(desktop);
+    const mobileResults = extract(mobile);
 
     return {
-        desktop: desktopResults,
-        mobile: { available: false, score: 0, seo_score: 0, accessibility_score: 0, best_practices_score: 0, lcp: 0, cls: 0, inp: 0 },
-        available: desktopResults.available,
-        diag: desktopResults.available ? 'desktop_ok' : `desktop_fail_${desktopResults.errorType || desktopResults.status}`
+        mobile: mobileResults,
+        desktop: { available: false, score: 0, seo_score: 0, accessibility_score: 0, best_practices_score: 0, lcp: 0, cls: 0, inp: 0 },
+        available: mobileResults.available,
+        diag: mobileResults.available ? 'mobile_ok' : `mobile_fail_${mobileResults.errorType || mobileResults.status}`
     }
 }

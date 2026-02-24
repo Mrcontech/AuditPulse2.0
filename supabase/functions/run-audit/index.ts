@@ -94,21 +94,23 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
 
             console.log(`[${auditId}] Gemini synthesis complete.`)
 
-            const desktop = rawData.performance?.desktop || {}
+            console.log(`[${auditId}] Gemini synthesis complete.`)
+
+            const mobile = rawData.performance?.mobile || {}
 
             const resultsPayload = {
                 audit_id: auditId,
-                performance_score: desktop.score || 0,
-                performance_score_mobile: 0,
-                seo_score: desktop.seo_score || 0,
-                accessibility_score: desktop.accessibility_score || 0,
-                best_practices_score: desktop.best_practices_score || 0,
-                lcp_desktop: desktop.lcp || 0,
-                cls_desktop: desktop.cls || 0,
-                inp_desktop: desktop.inp || 0,
-                lcp_mobile: 0,
-                cls_mobile: 0,
-                inp_mobile: 0,
+                performance_score: mobile.score || 0,
+                performance_score_mobile: mobile.score || 0,
+                seo_score: mobile.seo_score || 0,
+                accessibility_score: mobile.accessibility_score || 0,
+                best_practices_score: mobile.best_practices_score || 0,
+                lcp_desktop: mobile.lcp || 0, // Map mobile to desktop fields for frontend compatibility
+                cls_desktop: mobile.cls || 0,
+                inp_desktop: mobile.inp || 0,
+                lcp_mobile: mobile.lcp || 0,
+                cls_mobile: mobile.cls || 0,
+                inp_mobile: mobile.inp || 0,
                 keywords: rawData.seo?.organic_results || [],
                 total_results: rawData.seo?.total_results || 0,
                 industry_trends: rawData.insights?.sources || [],
