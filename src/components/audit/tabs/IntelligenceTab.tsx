@@ -93,20 +93,89 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                     <div className="flex items-center gap-2 mb-4">
                         <Users className="w-4 h-4 text-purple-400" />
-                        <h3 className="text-sm font-medium text-white">Top Competitors</h3>
+                        <h3 className="text-sm font-medium text-white">Top Competitors — Intelligence Briefs</h3>
                     </div>
-                    <div className="space-y-3">
-                        {results.competitor_analysis?.map((comp: any, i: number) => (
-                            <div key={i} className="p-3 bg-white/[0.02] border border-white/[0.04] rounded-lg">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm font-medium text-white">{comp.name}</span>
-                                    <a href={comp.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-white transition-colors">
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                    </a>
+                    <div className="space-y-4">
+                        {results.competitor_analysis?.map((comp: any, i: number) => {
+                            const tierColors: Record<string, string> = {
+                                budget: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+                                "mass-market": "bg-slate-500/20 text-slate-300 border-slate-500/30",
+                                "mid-market": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+                                premium: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+                                luxury: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+                                enterprise: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+                            };
+                            const tier = comp.positioning_tier?.toLowerCase() || "unknown";
+                            const tierClass = tierColors[tier] || "bg-white/10 text-white/60 border-white/10";
+
+                            return (
+                                <div key={i} className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3">
+                                    {/* Header: Name + URL + Tier Badge */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-sm font-semibold text-white">{comp.name}</span>
+                                                {comp.positioning_tier && comp.positioning_tier !== "unknown" && (
+                                                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${tierClass}`}>
+                                                        {comp.positioning_tier}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {comp.url && (
+                                            <a href={comp.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-white transition-colors shrink-0">
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    {/* Value Proposition */}
+                                    {comp.value_proposition && (
+                                        <div className="pl-3 border-l-2 border-blue-500/40">
+                                            <p className="text-xs text-blue-200/90 italic leading-relaxed">"{comp.value_proposition}"</p>
+                                        </div>
+                                    )}
+
+                                    {/* Fallback: old format description */}
+                                    {!comp.value_proposition && comp.description && (
+                                        <p className="text-xs text-muted-foreground">{comp.description}</p>
+                                    )}
+
+                                    {/* Intelligence Grid */}
+                                    {(comp.narrative_moat || comp.exploitable_weakness || comp.target_audience) && (
+                                        <div className="grid gap-2">
+                                            {comp.narrative_moat && (
+                                                <div className="flex items-start gap-2 p-2.5 bg-emerald-500/5 border border-emerald-500/15 rounded-lg">
+                                                    <ShieldAlert className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block mb-0.5">Narrative Moat</span>
+                                                        <p className="text-xs text-white/75 leading-relaxed">{comp.narrative_moat}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {comp.exploitable_weakness && (
+                                                <div className="flex items-start gap-2 p-2.5 bg-amber-500/5 border border-amber-500/15 rounded-lg">
+                                                    <Target className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block mb-0.5">Exploitable Weakness</span>
+                                                        <p className="text-xs text-white/75 leading-relaxed">{comp.exploitable_weakness}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {comp.target_audience && (
+                                                <div className="flex items-start gap-2 p-2.5 bg-violet-500/5 border border-violet-500/15 rounded-lg">
+                                                    <Users className="w-3.5 h-3.5 text-violet-400 mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <span className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider block mb-0.5">Target Audience</span>
+                                                        <p className="text-xs text-white/75 leading-relaxed">{comp.target_audience}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-xs text-muted-foreground">{comp.description}</p>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {(!results.competitor_analysis || results.competitor_analysis.length === 0) && (
                             <p className="text-sm text-muted-foreground">Researching competition landscape...</p>
                         )}

@@ -8,9 +8,9 @@
  * No external API key required — zero cost.
  */
 
-const MAX_PAGES = 12
-const CRAWL_TIMEOUT_MS = 90000 // 90s safety cap
-const PAGE_FETCH_TIMEOUT_MS = 15000 // 15s per page
+const MAX_PAGES = 6
+const CRAWL_TIMEOUT_MS = 30000 // 30s safety cap — leaves time for PageSpeed in parallel
+const PAGE_FETCH_TIMEOUT_MS = 5000 // 5s per page — fail fast on slow pages
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 // Paths to skip during link discovery
@@ -121,6 +121,8 @@ async function fetchPage(url: string): Promise<{
     status: number;
     markdown: string;
     title: string;
+    description: string;
+    keywords: string;
     rawHtml: string;
 }> {
     const controller = new AbortController()
@@ -150,14 +152,24 @@ async function fetchPage(url: string): Promise<{
         const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
         const title = titleMatch ? titleMatch[1].trim() : ''
 
+        // Extract meta description
+        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i) ||
+            html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["'][^>]*>/i)
+        const description = descMatch ? descMatch[1].trim() : ''
+
+        // Extract meta keywords
+        const keyMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']*)["'][^>]*>/i) ||
+            html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']keywords["'][^>]*>/i)
+        const keywords = keyMatch ? keyMatch[1].trim() : ''
+
         // Convert to markdown
         const markdown = htmlToMarkdown(html)
 
-        return { url, status, markdown, title, rawHtml: html }
+        return { url, status, markdown, title, description, keywords, rawHtml: html }
     } catch (err) {
         clearTimeout(timeoutId)
         console.warn(`[Crawler] Failed to fetch ${url}: ${err.message}`)
-        return { url, status: 0, markdown: '', title: '', rawHtml: '' }
+        return { url, status: 0, markdown: '', title: '', description: '', keywords: '', rawHtml: '' }
     }
 }
 
@@ -187,32 +199,41 @@ export async function crawlSite(url: string): Promise<any[]> {
             break
         }
 
-        const currentUrl = queue.shift()!
-        const normalizedCurrent = currentUrl.replace(/\/$/, '')
+        // Take a batch of up to 4 URLs
+        const batchSize = Math.min(4, MAX_PAGES - results.length, queue.length)
+        const currentBatch = queue.splice(0, batchSize)
 
-        if (visited.has(normalizedCurrent)) continue
-        visited.add(normalizedCurrent)
+        console.log(`[Crawler] Fetching batch of ${currentBatch.length} pages. Total results so far: ${results.length}`)
 
-        console.log(`[Crawler] Fetching page ${results.length + 1}/${MAX_PAGES}: ${currentUrl}`)
-        const page = await fetchPage(currentUrl)
+        // Fetch the entire batch in parallel
+        const pageResults = await Promise.all(currentBatch.map(url => fetchPage(url)))
 
-        // Extract links from the raw HTML (single fetch, no double request)
-        if (page.rawHtml && page.status >= 200 && page.status < 400) {
-            const links = extractLinks(page.rawHtml, new URL(currentUrl))
-            for (const link of links) {
-                if (!visited.has(link) && !queue.includes(link)) {
-                    queue.push(link)
+        for (const page of pageResults) {
+            if (visited.has(page.url.replace(/\/$/, ''))) continue
+            visited.add(page.url.replace(/\/$/, ''))
+
+            // Extract links from the raw HTML
+            if (page.rawHtml && page.status >= 200 && page.status < 400) {
+                const links = extractLinks(page.rawHtml, new URL(page.url))
+                for (const link of links) {
+                    if (!visited.has(link) && !queue.includes(link)) {
+                        queue.push(link)
+                    }
                 }
             }
-        }
 
-        // Store result without rawHtml (we don't need it downstream)
-        results.push({
-            url: page.url,
-            status: page.status,
-            markdown: page.markdown,
-            title: page.title,
-        })
+            // Store result
+            results.push({
+                url: page.url,
+                status: page.status,
+                markdown: page.markdown,
+                title: page.title,
+                description: page.description,
+                keywords: page.keywords,
+            })
+
+            if (results.length >= MAX_PAGES) break
+        }
     }
 
     console.log(`[Crawler] Crawl complete. ${results.length} pages in ${((Date.now() - startTime) / 1000).toFixed(1)}s`)

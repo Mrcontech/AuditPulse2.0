@@ -2,7 +2,6 @@
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.window" />
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { crawlSite } from './crawler.ts'
 import { getPageSpeedMetrics } from './pagespeed.ts'
@@ -16,31 +15,13 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req: Request) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
-    }
+// Log graceful shutdowns so we can diagnose if Supabase kills us
+addEventListener('beforeunload', (ev) => {
+    console.log(`[EdgeFunction] Shutting down: ${ev.detail?.reason || 'unknown'}`)
+})
 
-    let currentAuditId: string | null = null;
-    let currentMsgId: number | null = null;
-
+async function processAuditStage(supabase: any, url: string, auditId: string, stage: string, domain: string, msgId: number | null) {
     try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
-        const body = await req.json()
-        // Handle payload from both direct call and pgmq worker
-        const payload = body.record?.message || body
-        const { url, auditId, stage = 'collection', msg_id } = payload
-
-        currentAuditId = auditId;
-        currentMsgId = msg_id;
-        const domain = new URL(url).hostname
-
-        console.log(`[${auditId}] Processing stage: ${stage} for ${url}`)
-
-        // State machine for stages
         if (stage === 'collection') {
             await supabase.from('audits').update({
                 status: 'crawling',
@@ -48,24 +29,23 @@ serve(async (req: Request) => {
                 progress_label: 'Stage 1/3: Collecting site content and performance metrics...'
             }).eq('id', auditId)
 
-            console.log(`[${auditId}] Running Stage 1: Crawl + Metrics...`)
             const [crawlData, performance] = await Promise.all([
                 crawlSite(url),
                 getPageSpeedMetrics(url, Deno.env.get('PAGESPEED_API_KEY') ?? '')
             ])
 
-            // Persist to raw_data
             await supabase.from('audits').update({
                 progress: 35,
                 progress_label: 'Collection complete. Moving to market research...',
-                raw_data: { crawlData, performance }
+                raw_data: { crawlData, performance, pagespeed_available: performance.available }
             }).eq('id', auditId)
 
-            // Queue Stage 2
             await supabase.rpc('enqueue_audit_stage', { p_audit_id: auditId, p_url: url, p_stage: 'research' })
 
         } else if (stage === 'research') {
-            const { data: auditData } = await supabase.from('audits').select('raw_data').eq('id', auditId).single()
+            const { data: auditData, error: fetchErr } = await supabase.from('audits').select('raw_data').eq('id', auditId).single()
+            if (fetchErr) throw new Error(`Failed to fetch audit data for research: ${fetchErr.message}`)
+
             const rawData = auditData?.raw_data || {}
 
             await supabase.from('audits').update({
@@ -74,28 +54,29 @@ serve(async (req: Request) => {
                 progress_label: 'Stage 2/3: Researching industry trends and competitors...'
             }).eq('id', auditId)
 
-            console.log(`[${auditId}] Running Stage 2: Niche + Research...`)
-            const niche = await discoverNiche(rawData.crawlData, Deno.env.get('GEMINI_API_KEY') ?? '')
+            const [niche, seo] = await Promise.all([
+                discoverNiche(rawData.crawlData, Deno.env.get('GEMINI_API_KEY') ?? ''),
+                getSerpData(domain, Deno.env.get('SERP_API_KEY') ?? '')
+            ])
 
-            const [seo, insights, competitors, security] = await Promise.all([
-                getSerpData(domain, Deno.env.get('SERP_API_KEY') ?? ''),
+            const [insights, competitors, security] = await Promise.all([
                 getMarketInsights(niche, Deno.env.get('TAVILY_API_KEY') ?? ''),
                 getCompetitors(niche, Deno.env.get('TAVILY_API_KEY') ?? ''),
                 checkSecurity(url, rawData.crawlData)
             ])
 
-            // Update raw_data
             await supabase.from('audits').update({
                 progress: 70,
                 progress_label: 'Research complete. Starting deep AI synthesis...',
                 raw_data: { ...rawData, niche, seo, insights, competitors, security }
             }).eq('id', auditId)
 
-            // Queue Stage 3
             await supabase.rpc('enqueue_audit_stage', { p_audit_id: auditId, p_url: url, p_stage: 'synthesis' })
 
         } else if (stage === 'synthesis') {
-            const { data: auditData } = await supabase.from('audits').select('raw_data').eq('id', auditId).single()
+            const { data: auditData, error: fetchErr } = await supabase.from('audits').select('raw_data').eq('id', auditId).single()
+            if (fetchErr) throw new Error(`Failed to fetch audit data for synthesis: ${fetchErr.message}`)
+
             const rawData = auditData?.raw_data || {}
 
             await supabase.from('audits').update({
@@ -103,7 +84,6 @@ serve(async (req: Request) => {
                 progress_label: 'Stage 3/3: Finalizing strategic synthesis...'
             }).eq('id', auditId)
 
-            console.log(`[${auditId}] Running Stage 3: Gemini Synthesis...`)
             const aiAnalysis = await analyzeWithGemini(
                 rawData.crawlData,
                 rawData.performance,
@@ -112,51 +92,50 @@ serve(async (req: Request) => {
                 Deno.env.get('GEMINI_API_KEY') ?? ''
             )
 
-            // Store Results
-            await supabase.from('audit_results').insert({
+            console.log(`[${auditId}] Gemini synthesis complete.`)
+
+            const desktop = rawData.performance?.desktop || {}
+
+            const resultsPayload = {
                 audit_id: auditId,
-                performance_score: rawData.performance.desktop.score,
-                performance_score_mobile: rawData.performance.mobile.score,
-                seo_score: rawData.performance.desktop.seo_score,
-                accessibility_score: rawData.performance.desktop.accessibility_score,
-                best_practices_score: rawData.performance.desktop.best_practices_score,
-                lcp_desktop: rawData.performance.desktop.lcp,
-                cls_desktop: rawData.performance.desktop.cls,
-                inp_desktop: rawData.performance.desktop.inp,
-                lcp_mobile: rawData.performance.mobile.lcp,
-                cls_mobile: rawData.performance.mobile.cls,
-                inp_mobile: rawData.performance.mobile.inp,
-                keywords: rawData.seo.organic_results,
-                total_results: rawData.seo.total_results,
-                industry_trends: rawData.insights.sources,
-                market_insights: rawData.insights.answer,
-                competitor_analysis: rawData.competitors,
-                competitive_gap: aiAnalysis.competitive_edge.vulnerability_analysis,
-                content_gaps: aiAnalysis.seo_analysis.content_gaps,
-                market_gap: aiAnalysis.competitive_edge.asymmetric_advantage,
-                swot_analysis: aiAnalysis.competitive_edge.swot,
-                strategic_keywords: aiAnalysis.seo_analysis.strategic_keywords,
-                security_score: rawData.security.security_score,
-                ssl_valid: rawData.security.ssl_valid,
-                security_headers: rawData.security.security_headers,
-                broken_links: rawData.security.broken_links,
+                performance_score: desktop.score || 0,
+                performance_score_mobile: 0,
+                seo_score: desktop.seo_score || 0,
+                accessibility_score: desktop.accessibility_score || 0,
+                best_practices_score: desktop.best_practices_score || 0,
+                lcp_desktop: desktop.lcp || 0,
+                cls_desktop: desktop.cls || 0,
+                inp_desktop: desktop.inp || 0,
+                lcp_mobile: 0,
+                cls_mobile: 0,
+                inp_mobile: 0,
+                keywords: rawData.seo?.organic_results || [],
+                total_results: rawData.seo?.total_results || 0,
+                industry_trends: rawData.insights?.sources || [],
+                market_insights: rawData.insights?.answer || '',
+                competitor_analysis: rawData.competitors || [],
                 executive_summary: aiAnalysis.executive_summary,
-                brand_voice_analysis: aiAnalysis?.market_positioning?.positioning_statement,
-                cta_analysis: aiAnalysis?.conversion_psychology?.persuasion_hooks?.map((h: any) => h.hook).join(", ") || "",
-                ux_friction_points: aiAnalysis?.conversion_psychology?.psychological_barriers,
-                jobs_to_be_done: aiAnalysis?.conversion_psychology?.jobs_to_be_done,
-                strategic_recommendations: aiAnalysis?.strategic_recommendations,
-                strategy_score: aiAnalysis.strategy_score,
-                ecosystem_recommendations: aiAnalysis?.ecosystem_strategy,
-                growth_roadmap: aiAnalysis?.growth_roadmap,
-                timeframe_note: aiAnalysis?.timeframe_note,
-                market_positioning: aiAnalysis?.market_positioning,
-                conversion_psychology: aiAnalysis?.conversion_psychology,
-                competitive_edge: aiAnalysis?.competitive_edge,
-                seo_analysis: aiAnalysis?.seo_analysis,
-                crawl_data: rawData.crawlData,
-                pages_crawled: rawData.crawlData.length
-            })
+                brand_voice_analysis: aiAnalysis.brand_voice_analysis,
+                cta_analysis: aiAnalysis.cta_analysis,
+                swot_analysis: aiAnalysis.market_intelligence?.swot,
+                competitive_gap: aiAnalysis.market_intelligence?.competitive_gap,
+                competitive_edge: aiAnalysis.market_intelligence?.winning_strategies,
+                ux_friction_points: aiAnalysis.ux_friction_points,
+                content_gaps: aiAnalysis.content_gaps,
+                strategic_recommendations: aiAnalysis.strategic_recommendations,
+                security_score: rawData.security?.security_score || 0,
+                ssl_valid: rawData.security?.ssl_valid || false,
+                security_headers: rawData.security?.security_headers || {},
+                broken_links: rawData.security?.broken_links || [],
+                crawl_data: rawData.crawlData || [],
+                pages_crawled: rawData.crawlData?.length || 0,
+                pagespeed_available: desktop.available ?? false
+            }
+
+            const { error: insertError } = await supabase.from('audit_results').insert(resultsPayload).select()
+            if (insertError) throw new Error(`Failed to store audit results: ${insertError.message}`)
+
+            console.log(`[${auditId}] Successfully inserted results.`)
 
             await supabase.from('audits').update({
                 status: 'complete',
@@ -164,37 +143,51 @@ serve(async (req: Request) => {
                 progress_label: 'Audit completed successfully!',
                 completed_at: new Date().toISOString()
             }).eq('id', auditId)
-
-            console.log(`[${auditId}] Audit completed successfully`)
         }
 
-        // Acknowledge (archive) the message upon success
-        if (currentMsgId) {
-            await supabase.rpc('acknowledge_audit_message', { p_msg_id: currentMsgId })
+        if (msgId) {
+            await supabase.rpc('acknowledge_audit_message', { p_msg_id: msgId })
         }
-
-        return new Response(JSON.stringify({ success: true, stage }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        console.log(`[${auditId}] Stage ${stage} completed successfully.`)
 
     } catch (err: any) {
-        console.error(`Audit failed at stage: ${err.message}`)
+        console.error(`[${auditId}] Audit stage ${stage} failed: ${err.message}`)
+        try {
+            await supabase.from('audits').update({
+                status: 'failed',
+                error_message: err.message,
+                progress_label: 'Audit failed',
+                progress: 0
+            }).eq('id', auditId)
+        } catch (updateErr) {
+            console.error(`[${auditId}] Failed to update audit status:`, updateErr)
+        }
+    }
+}
 
+Deno.serve(async (req: Request) => {
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
+    try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        if (currentAuditId) {
-            await supabase.from('audits').update({
-                status: 'failed',
-                error_message: err.message,
-                progress_label: 'Audit failed during processing',
-                progress: 0
-            }).eq('id', currentAuditId)
-        }
+        const body = await req.json()
+        const payload = body.record?.message || body
+        const { url, auditId, stage = 'collection', msg_id } = payload
+        const domain = new URL(url).hostname
 
-        // If we failed, the message will eventually become visible again in PGMQ 
-        // due to VT expiration, unless we specifically archive it on error.
-        // For now, we let it retry naturally or the user can manual-retry.
+        console.log(`[${auditId}] Received stage: ${stage} for ${url}`)
 
+        EdgeRuntime.waitUntil(processAuditStage(supabase, url, auditId, stage, domain, msg_id || null))
+
+        return new Response(JSON.stringify({ success: true, stage }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+    } catch (err: any) {
+        console.error(`Audit request parse failed: ${err.message}`)
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 })

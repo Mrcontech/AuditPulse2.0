@@ -1,4 +1,4 @@
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, AlertCircle } from "lucide-react";
 import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, Cell } from 'recharts';
 import {
     Tooltip,
@@ -59,6 +59,18 @@ export const PerformanceTab = ({ results }: { results: any }) => {
 
     return (
         <div className="space-y-6">
+            {results.pagespeed_available === false && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-yellow-200">PageSpeed Data Unavailable</p>
+                        <p className="text-xs text-yellow-200/60 leading-relaxed">
+                            Google PageSpeed Insights could not retrieve metrics for this site. This often happens if the site is behind a firewall, blocks Google's crawlers, or is extremely slow to respond.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Core Web Vitals with Radial Charts */}
             <TooltipProvider>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

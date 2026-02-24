@@ -30,10 +30,9 @@ import { AuditPDFReport } from "@/components/audit/AuditPDFReport";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { ChecklistTab } from "@/components/audit/tabs/ChecklistTab";
 import { HistoryTab } from "@/components/audit/tabs/HistoryTab";
-import { StrategyTab } from "@/components/audit/tabs/StrategyTab";
+import { ListTodo, TrendingUp } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ListTodo, TrendingUp, Sparkles } from "lucide-react";
 
 export default function Audit() {
     const { id } = useParams();
@@ -93,6 +92,15 @@ export default function Audit() {
             return data;
         },
         enabled: !!audit?.domain,
+    });
+
+    const { data: avgDuration } = useQuery({
+        queryKey: ["avg-audit-duration"],
+        queryFn: async () => {
+            const { data, error } = await supabase.rpc('get_average_audit_duration');
+            if (error) return 180; // Default to 3 mins if error
+            return data || 180;
+        },
     });
 
     const queryClient = useQueryClient();
@@ -251,7 +259,7 @@ export default function Audit() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-muted-foreground italic">
-                                        This usually takes 1-2 minutes. Stay tuned for your results.
+                                        This usually takes ~{Math.ceil((avgDuration || 180) / 60)} minutes. Stay tuned for your results.
                                     </p>
                                 </div>
                             </div>
@@ -273,10 +281,6 @@ export default function Audit() {
                                 <TabsList className="bg-transparent p-0 h-auto border-b border-white/[0.06] w-full flex gap-0 overflow-x-auto">
                                     <TabsTrigger value="overview" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Overview</TabsTrigger>
 
-                                    <TabsTrigger value="strategy" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                                        Strategy
-                                    </TabsTrigger>
 
                                     <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
                                         Performance
@@ -455,9 +459,6 @@ export default function Audit() {
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="strategy" className="outline-none">
-                                <StrategyTab results={results} />
-                            </TabsContent>
 
                             <TabsContent value="performance" className="outline-none">
                                 <PerformanceTab results={results} />

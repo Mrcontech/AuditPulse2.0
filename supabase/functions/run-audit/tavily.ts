@@ -20,7 +20,7 @@ export async function getMarketInsights(niche: string, apiKey: string) {
         body: JSON.stringify({
             api_key: apiKey,
             query: query,
-            search_depth: "advanced",
+            search_depth: "basic",
             include_answer: true,
             max_results: 5
         })
@@ -45,7 +45,7 @@ export async function getCompetitors(niche: string, apiKey: string) {
         body: JSON.stringify({
             api_key: apiKey,
             query: query,
-            search_depth: "advanced",
+            search_depth: "basic",
             max_results: 3
         })
     })
