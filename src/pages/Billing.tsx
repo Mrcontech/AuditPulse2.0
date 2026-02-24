@@ -86,8 +86,8 @@ export default function Billing() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="space-y-1">
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Billing & Plans</h1>
-                        <p className="text-muted-foreground flex items-center gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Billing & Plans</h1>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
                             Manage your subscription and view usage
                             <ShieldCheck className="w-4 h-4 text-primary/60" />
                         </p>
@@ -98,7 +98,7 @@ export default function Billing() {
                     {/* Main Content Area */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Current Plan Hero Card */}
-                        <div className="relative overflow-hidden bg-card border border-white/[0.06] rounded-2xl p-8">
+                        <div className="relative overflow-hidden bg-card border border-white/[0.06] rounded-2xl p-6 sm:p-8">
                             {/* Decorative background glow */}
                             <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
 
@@ -109,8 +109,8 @@ export default function Billing() {
                                             <Zap className="w-6 h-6 fill-primary/20" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Current Plan</p>
-                                            <h2 className="text-2xl font-bold text-white capitalize">{tier} Plan</h2>
+                                            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Current Plan</p>
+                                            <h2 className="text-xl sm:text-2xl font-bold text-white capitalize">{tier} Plan</h2>
                                         </div>
                                     </div>
 
@@ -119,12 +119,12 @@ export default function Billing() {
                                             "w-2 h-2 rounded-full animate-pulse",
                                             isActive ? "bg-green-500" : "bg-yellow-500"
                                         )} />
-                                        <span className="text-sm font-medium text-white">
+                                        <span className="text-xs sm:text-sm font-medium text-white">
                                             Status: {isActive ? "Active" : "Pending / Inactive"}
                                         </span>
                                     </div>
 
-                                    <p className="text-muted-foreground max-w-md">
+                                    <p className="text-sm text-muted-foreground max-w-md">
                                         {tier === 'free'
                                             ? "You're currently on the free tier. Upgrade to unlock bulk audits, advanced analytics, and priority support."
                                             : `You're enjoying the ${tier} features. Your plan includes up to ${limit} audits per month.`}
@@ -133,8 +133,8 @@ export default function Billing() {
 
                                 <div className="flex flex-col gap-3">
                                     {tier === 'free' ? (
-                                        <Link to="/pricing">
-                                            <Button className="w-full md:w-auto shadow-lg shadow-primary/20">
+                                        <Link to="/pricing" className="w-full md:w-auto">
+                                            <Button className="w-full shadow-lg shadow-primary/20">
                                                 Upgrade Now
                                             </Button>
                                         </Link>
@@ -143,7 +143,7 @@ export default function Billing() {
                                             Manage Subscription
                                         </Button>
                                     )}
-                                    <Link to="/settings" className="text-xs text-center text-muted-foreground hover:text-white transition-colors">
+                                    <Link to="/settings" className="text-[10px] text-center text-muted-foreground hover:text-white transition-colors">
                                         Update billing details
                                     </Link>
                                 </div>
@@ -166,14 +166,14 @@ export default function Billing() {
                         </div>
 
                         {/* Usage Quick View */}
-                        <div className="bg-card/50 border border-white/[0.06] rounded-xl p-6 flex items-center justify-between gap-4">
-                            <div className="space-y-1">
+                        <div className="bg-card/50 border border-white/[0.06] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-1 text-center sm:text-left">
                                 <p className="text-sm font-medium text-white">Audit Usage</p>
                                 <p className="text-xs text-muted-foreground">Usage resets on your next billing date.</p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-center sm:text-right w-full sm:w-auto">
                                 <p className="text-xl font-bold text-white">{profile?.audits_this_month || 0} / {limit}</p>
-                                <div className="w-32 h-1.5 bg-white/5 rounded-full mt-1.5 overflow-hidden">
+                                <div className="w-full sm:w-32 h-1.5 bg-white/5 rounded-full mt-1.5 overflow-hidden">
                                     <div
                                         className="h-full bg-primary transition-all duration-500"
                                         style={{ width: `${Math.min(((profile?.audits_this_month || 0) / limit) * 100, 100)}%` }}
@@ -189,33 +189,33 @@ export default function Billing() {
                                 <h3 className="font-semibold text-white">Billing History</h3>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-xs sm:text-sm">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-muted-foreground">
-                                            <th className="px-6 py-3 font-medium">Date</th>
-                                            <th className="px-6 py-3 font-medium">Description</th>
-                                            <th className="px-6 py-3 font-medium">Amount</th>
-                                            <th className="px-6 py-3 font-medium text-right">Status</th>
+                                            <th className="px-4 sm:px-6 py-3 font-medium">Date</th>
+                                            <th className="px-4 sm:px-6 py-3 font-medium">Description</th>
+                                            <th className="px-4 sm:px-6 py-3 font-medium">Amount</th>
+                                            <th className="px-4 sm:px-6 py-3 font-medium text-right">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/[0.06]">
                                         {payments && payments.length > 0 ? (
                                             payments.map((payment) => (
                                                 <tr key={payment.id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="px-6 py-4 text-white">
+                                                    <td className="px-4 sm:px-6 py-4 text-white whitespace-nowrap">
                                                         {new Date(payment.created_at).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-white font-medium">{payment.product_name || "AuditPulse Subscription"}</span>
-                                                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{payment.dodo_payment_id}</span>
+                                                    <td className="px-4 sm:px-6 py-4">
+                                                        <div className="flex flex-col min-w-[120px]">
+                                                            <span className="text-white font-medium truncate">{payment.product_name || "AuditPulse Subscription"}</span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase tracking-widest truncate">{payment.dodo_payment_id}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-white font-medium">
+                                                    <td className="px-4 sm:px-6 py-4 text-white font-medium">
                                                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: payment.currency }).format(payment.amount)}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-400">
+                                                    <td className="px-4 sm:px-6 py-4 text-right">
+                                                        <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-green-500/10 text-green-400">
                                                             Paid
                                                         </span>
                                                     </td>
@@ -223,7 +223,7 @@ export default function Billing() {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground italic">
+                                                <td colSpan={4} className="px-4 sm:px-6 py-10 text-center text-muted-foreground italic">
                                                     No transactions found.
                                                 </td>
                                             </tr>

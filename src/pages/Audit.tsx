@@ -287,46 +287,46 @@ export default function Audit() {
                         </div>
                     ) : (
                         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                            {/* Linear-style underline tabs - scrollable on mobile */}
                             <TooltipProvider>
-                                <TabsList className="bg-transparent p-0 h-auto border-b border-white/[0.06] w-full flex gap-0 overflow-x-auto">
-                                    <TabsTrigger value="overview" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap">Overview</TabsTrigger>
+                                <div className="border-b border-white/[0.06] -mx-6 px-6 sm:mx-0 sm:px-0 scrollbar-hide">
+                                    <TabsList className="bg-transparent p-0 h-auto w-full flex gap-0 overflow-x-auto scrollbar-hide">
+                                        <TabsTrigger value="overview" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap shrink-0">Overview</TabsTrigger>
 
 
-                                    <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        Performance
-                                    </TabsTrigger>
+                                        <TabsTrigger value="performance" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            Performance
+                                        </TabsTrigger>
 
-                                    <TabsTrigger value="seo" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        SEO
-                                    </TabsTrigger>
+                                        <TabsTrigger value="seo" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            SEO
+                                        </TabsTrigger>
 
-                                    <TabsTrigger value="security" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        Security
-                                    </TabsTrigger>
+                                        <TabsTrigger value="security" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            Security
+                                        </TabsTrigger>
 
-                                    <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        Growth Insights
-                                    </TabsTrigger>
+                                        <TabsTrigger value="intelligence" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            Growth Insights
+                                        </TabsTrigger>
 
-                                    <TabsTrigger value="history" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        <TrendingUp className="w-3.5 h-3.5" />
-                                        History
-                                    </TabsTrigger>
+                                        <TabsTrigger value="history" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            <TrendingUp className="w-3.5 h-3.5" />
+                                            History
+                                        </TabsTrigger>
 
-                                    <TabsTrigger value="checklist" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5">
-                                        <ListTodo className="w-3.5 h-3.5" />
-                                        Checklist
-                                    </TabsTrigger>
-                                </TabsList>
+                                        <TabsTrigger value="checklist" className="px-3 sm:px-4 py-2.5 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:text-white text-muted-foreground text-xs sm:text-sm font-medium transition-colors hover:text-white/80 -mb-px whitespace-nowrap flex items-center gap-1.5 shrink-0">
+                                            <ListTodo className="w-3.5 h-3.5" />
+                                            Checklist
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </div>
                             </TooltipProvider>
 
                             <TabsContent value="overview" className="space-y-6 outline-none">
                                 {/* Scores Grid - Linear style */}
-                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
                                     {[
                                         { label: "Performance", value: results?.performance_score },
-                                        { label: "Mobile", value: results?.performance_score_mobile },
                                         { label: "SEO", value: results?.seo_score },
                                         { label: "Security", value: results?.security_score },
                                         { label: "Pages Crawled", value: results?.pages_crawled }
@@ -367,7 +367,7 @@ export default function Audit() {
                                         </div>
 
                                         {/* Quick Stats */}
-                                        <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-3 gap-2 sm:gap-4 overflow-hidden">
+                                        <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>

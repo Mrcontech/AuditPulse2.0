@@ -8,7 +8,8 @@ import {
     Menu,
     Search,
     User,
-    X
+    X,
+    FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +76,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
     const navItems = [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        { label: "Reports", icon: FileText, href: "/history" },
         { label: "Settings", icon: Settings, href: "/settings" },
         { label: "Billing", icon: CreditCard, href: "/billing" },
     ];

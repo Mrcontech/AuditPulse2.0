@@ -1,5 +1,19 @@
-import { Lock, Unlock, CheckCircle, XCircle } from "lucide-react";
+import { Lock, Unlock, CheckCircle, XCircle, Info } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, RadialBarChart, RadialBar } from 'recharts';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const HEADER_EXPLANATIONS: Record<string, string> = {
+    "Referrer-Policy": "Controls how much information about the origin of a request is sent to the destination server.",
+    "X-Frame-Options": "Prevents clickjacking attacks by controlling whether the browser is allowed to render a page in a frame or iframe.",
+    "X-Content-Type-Options": "Tells the browser to strictly follow the MIME types in the Content-Type header, preventing MIME type sniffing.",
+    "Content-Security-Policy": "A powerful security layer that helps detect and block common attacks like Cross-Site Scripting (XSS) and data injection.",
+    "Strict-Transport-Security": "Instructs browsers to only communicate with the website over secure HTTPS connections, preventing downgrade attacks."
+};
 
 export const SecurityTab = ({ results }: { results: any }) => {
     if (!results) return <div className="text-sm text-muted-foreground">No security data available.</div>;
@@ -115,7 +129,19 @@ export const SecurityTab = ({ results }: { results: any }) => {
                     <div className="space-y-2">
                         {results.security_headers && Object.entries(results.security_headers).map(([header, active]: [string, any]) => (
                             <div key={header} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                                <span className="text-xs font-mono text-muted-foreground">{header}</span>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div className="flex items-center gap-1.5 cursor-help group">
+                                                <span className="text-xs font-mono text-muted-foreground group-hover:text-white transition-colors">{header}</span>
+                                                <Info className="w-3 h-3 text-muted-foreground/50 group-hover:text-blue-400 transition-colors" />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-[200px] text-[11px] leading-relaxed bg-[#0A0A0B] border-white/[0.1] text-white">
+                                            {HEADER_EXPLANATIONS[header] || "Standard security header for web application protection."}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                                 {active ? (
                                     <div className="flex items-center gap-1 text-green-400">
                                         <CheckCircle className="w-3.5 h-3.5" />
