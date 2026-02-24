@@ -7,8 +7,9 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
 
     const fetchStrategy = async (strategy: 'mobile' | 'desktop') => {
         const controller = new AbortController()
-        const timeoutMs = 45000; // 45s per strategy — fits in 150s wall clock with parallel crawl
+        const timeoutMs = 90000; // 90s — Google PageSpeed can take up to 120s, but 90s hits the sweet spot for most sites
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+        const start = Date.now();
 
         if (!apiKey) {
             console.error(`PageSpeed API key is missing for ${strategy}`)
@@ -16,17 +17,19 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
         }
 
         try {
+            console.log(`[PageSpeed] Starting ${strategy} fetch for ${url}...`)
             const categories = 'category=performance&category=seo&category=accessibility&category=best-practices';
             const apiUrl = `https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&${categories}&key=${apiKey}`;
 
             const response = await fetch(apiUrl, { signal: controller.signal })
+            const elapsed = ((Date.now() - start) / 1000).toFixed(1);
 
             if (!response.ok) {
                 const errorText = await response.text();
                 let parsedError = {};
                 try { parsedError = JSON.parse(errorText); } catch (e) { }
 
-                console.warn(`PageSpeed API error (${strategy}) [${response.status}]: ${errorText}`);
+                console.warn(`[PageSpeed] API error (${strategy}) [${response.status}] after ${elapsed}s: ${errorText}`);
                 return {
                     success: false,
                     status: response.status,
@@ -37,11 +40,13 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
                 }
             }
 
+            console.log(`[PageSpeed] ${strategy} successful in ${elapsed}s`)
             const data = await response.json();
             return { success: true, ...data };
         } catch (err: any) {
+            const elapsed = ((Date.now() - start) / 1000).toFixed(1);
             const isTimeout = err.name === 'AbortError';
-            console.warn(`PageSpeed ${strategy} ${isTimeout ? 'timed out' : 'failed'} for ${url}:`, err.message)
+            console.warn(`[PageSpeed] ${strategy} ${isTimeout ? 'TIMED OUT' : 'FAILED'} for ${url} after ${elapsed}s:`, err.message)
             return {
                 success: false,
                 errorType: isTimeout ? 'TIMEOUT' : 'FETCH_ERROR',
@@ -54,28 +59,8 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
         }
     }
 
-    const fetchWithRetry = async (strategy: 'mobile' | 'desktop', maxRetries = 1) => {
-        let lastResult = null;
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            if (attempt > 0) {
-                const delay = 3000; // flat 3s retry delay to save time budget
-                console.log(`Retrying PageSpeed ${strategy} (attempt ${attempt}/${maxRetries}) for ${url} in ${delay}ms...`);
-                await new Promise(r => setTimeout(r, delay));
-            }
-
-            lastResult = await fetchStrategy(strategy);
-            if (lastResult.success) return lastResult;
-
-            // If it's a 4xx error (other than maybe 429), don't retry as it's likely a permanent failure
-            if (lastResult.status && lastResult.status >= 400 && lastResult.status < 500 && lastResult.status !== 429) {
-                break;
-            }
-        }
-        return lastResult;
-    }
-
-    // Only fetch desktop strategy as requested
-    const desktop = await fetchWithRetry('desktop');
+    // Single attempt with 90s budget is more effective than multiple short attempts
+    const desktop = await fetchStrategy('desktop');
 
     const extract = (data: any) => {
         const lighthouse = data.lighthouseResult?.audits || {};

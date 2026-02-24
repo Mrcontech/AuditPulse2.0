@@ -46,8 +46,12 @@ export default function Audit() {
                 .from("audits")
                 .select("*")
                 .eq("id", id)
-                .single();
-            if (error) throw error;
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error fetching audit:", error);
+                throw error;
+            }
             return data;
         },
         refetchInterval: (query) => {
@@ -66,8 +70,14 @@ export default function Audit() {
                 .from("audit_results")
                 .select("*")
                 .eq("audit_id", id)
-                .single();
-            return data || null;
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error fetching audit results:", error);
+                // Don't throw here to allow the UI to show a "searching" or "empty" state instead of crashing
+                return null;
+            }
+            return data;
         },
         enabled: !!audit && audit.status === "complete",
     });
@@ -431,22 +441,22 @@ export default function Audit() {
                                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                                     <h3 className="text-sm font-medium text-white mb-3">Executive Summary</h3>
                                     <div className="space-y-4">
-                                        {typeof results?.executive_summary === 'object' ? (
+                                        {results?.executive_summary && typeof results.executive_summary === 'object' ? (
                                             <>
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Vision</p>
                                                     <p className="text-sm text-white/90 leading-relaxed italic">
-                                                        "{results.executive_summary.vision}"
+                                                        "{results.executive_summary.vision || "No vision statement available"}"
                                                     </p>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                                     <div className="space-y-1">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Core Tension</p>
-                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.core_tension}</p>
+                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.core_tension || "N/A"}</p>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Perfect Pitch</p>
-                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.one_line_pitch}</p>
+                                                        <p className="text-[12px] text-white/70 leading-snug">{results.executive_summary.one_line_pitch || "N/A"}</p>
                                                     </div>
                                                 </div>
                                             </>
