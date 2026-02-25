@@ -7,7 +7,7 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
 
     const fetchStrategy = async (strategy: 'mobile' | 'desktop') => {
         const controller = new AbortController()
-        const timeoutMs = 90000; // 90s — Google PageSpeed can take up to 120s, but 90s hits the sweet spot for most sites
+        const timeoutMs = 120000; // 120s — safe within free plan's 150s wall clock limit
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
         const start = Date.now();
 

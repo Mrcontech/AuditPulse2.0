@@ -15,13 +15,71 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Log graceful shutdowns so we can diagnose if Supabase kills us
-addEventListener('beforeunload', (ev) => {
-    console.log(`[EdgeFunction] Shutting down: ${ev.detail?.reason || 'unknown'}`)
+// Global audit context for beforeunload access
+let __currentAudit: { supabase: any; auditId: string; stage: string; url: string } | null = null;
+
+// Defensive: on shutdown, try to re-enqueue the current stage for retry
+addEventListener('beforeunload', async (ev: any) => {
+    const reason = ev.detail?.reason || 'unknown';
+    console.error(`[EdgeFunction] SHUTDOWN: ${reason}`);
+
+    if (__currentAudit) {
+        const { supabase, auditId, stage, url } = __currentAudit;
+        try {
+            console.log(`[${auditId}] Attempting to save state and re-enqueue stage "${stage}"...`);
+            await supabase.from('audits').update({
+                status: 'pending_retry',
+                error_message: `Worker shutdown during ${stage}: ${reason}`,
+                progress_label: `Retrying ${stage} stage...`
+            }).eq('id', auditId);
+
+            await supabase.rpc('enqueue_audit_stage', {
+                p_audit_id: auditId,
+                p_url: url,
+                p_stage: stage
+            });
+            console.log(`[${auditId}] Successfully re-enqueued stage "${stage}" for retry.`);
+        } catch (e) {
+            console.error(`[${auditId}] Failed to save state on shutdown:`, e);
+        }
+    }
 })
 
 async function processAuditStage(supabase: any, url: string, auditId: string, stage: string, domain: string, msgId: number | null) {
+    // Store context globally so beforeunload can access it
+    __currentAudit = { supabase, auditId, stage, url };
+
     try {
+        // --- Retry detection ---
+        const { data: currentAudit } = await supabase
+            .from('audits')
+            .select('retry_count')
+            .eq('id', auditId)
+            .single();
+
+        const retryCount = currentAudit?.retry_count || 0;
+        const MAX_RETRIES = 2;
+
+        if (retryCount >= MAX_RETRIES) {
+            console.error(`[${auditId}] Max retries (${MAX_RETRIES}) exceeded for stage ${stage}`);
+            await supabase.from('audits').update({
+                status: 'failed',
+                error_message: `Stage ${stage} failed after ${MAX_RETRIES} retries`,
+                progress_label: 'Audit failed after multiple attempts',
+                progress: 0
+            }).eq('id', auditId);
+            if (msgId) await supabase.rpc('acknowledge_audit_message', { p_msg_id: msgId });
+            __currentAudit = null;
+            return;
+        }
+
+        // Increment retry count
+        await supabase.from('audits').update({
+            retry_count: retryCount + 1
+        }).eq('id', auditId);
+
+        console.log(`[${auditId}] Processing stage ${stage} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+
         if (stage === 'collection') {
             await supabase.from('audits').update({
                 status: 'crawling',
@@ -94,8 +152,6 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
 
             console.log(`[${auditId}] Gemini synthesis complete.`)
 
-            console.log(`[${auditId}] Gemini synthesis complete.`)
-
             const mobile = rawData.performance?.mobile || {}
 
             const resultsPayload = {
@@ -105,7 +161,7 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
                 seo_score: mobile.seo_score || 0,
                 accessibility_score: mobile.accessibility_score || 0,
                 best_practices_score: mobile.best_practices_score || 0,
-                lcp_desktop: mobile.lcp || 0, // Map mobile to desktop fields for frontend compatibility
+                lcp_desktop: mobile.lcp || 0,
                 cls_desktop: mobile.cls || 0,
                 inp_desktop: mobile.inp || 0,
                 lcp_mobile: mobile.lcp || 0,
@@ -131,7 +187,7 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
                 broken_links: rawData.security?.broken_links || [],
                 crawl_data: rawData.crawlData || [],
                 pages_crawled: rawData.crawlData?.length || 0,
-                pagespeed_available: desktop.available ?? false
+                pagespeed_available: mobile.available ?? false
             }
 
             const { error: insertError } = await supabase.from('audit_results').insert(resultsPayload).select()
@@ -150,6 +206,9 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
         if (msgId) {
             await supabase.rpc('acknowledge_audit_message', { p_msg_id: msgId })
         }
+
+        // Reset retry count on successful completion of the stage
+        await supabase.from('audits').update({ retry_count: 0 }).eq('id', auditId);
         console.log(`[${auditId}] Stage ${stage} completed successfully.`)
 
     } catch (err: any) {
@@ -164,6 +223,9 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
         } catch (updateErr) {
             console.error(`[${auditId}] Failed to update audit status:`, updateErr)
         }
+    } finally {
+        // Clear global context after processing
+        __currentAudit = null;
     }
 }
 
