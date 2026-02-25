@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const heroData = {
     customerSatisfactionBanner: {
-        text: "99% customer satisfaction",
+        text: "Trusted by growing brands",
         avatars: {
             items: [
                 { _id: "1", avatar: { src: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" } },

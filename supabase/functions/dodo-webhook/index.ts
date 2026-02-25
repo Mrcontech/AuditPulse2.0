@@ -64,15 +64,20 @@ serve(async (req) => {
 
             if (userId) {
                 // Map Product ID to Tier
+                console.log(`Received Webhook for User ${userId}. Product ID: ${productId}`)
+
                 let tier = 'free'
                 let productName = 'Free Plan'
-                if (productId === 'pdt_0NYUy3n4rUmePuUR2J0eF') {
+
+                // Flexible matching for Pro and Max plans
+                if (productId === 'pdt_0NYUy3n4rUmePuUR2J0eF' || productId?.includes('pro')) {
                     tier = 'pro'
                     productName = 'Pro Plan'
-                }
-                if (productId === 'pdt_0NYUyObQDb5CrAtOTzZiJ') {
+                } else if (productId === 'pdt_0NYUyObQDb5CrAtOTzZiJ' || productId?.includes('max')) {
                     tier = 'max'
                     productName = 'Max Plan'
+                } else {
+                    console.warn(`Unrecognized Product ID: ${productId}. Defaulting to Free Plan.`)
                 }
 
                 // 1. Update Profile Subscription
@@ -89,9 +94,12 @@ serve(async (req) => {
                 console.log(`Updated subscription for user ${userId} to ${tier}`)
 
                 // 2. Log Payment in Billing History
-                const amount = data.total_amount || data.amount || 0
+                const rawAmount = data.total_amount || data.amount || 0
+                const amount = Number(rawAmount) / 100 // Convert from minor units (cents/kobo) to major units
                 const currency = data.currency || 'USD'
                 const paymentId = data.payment_id || data.subscription_id || event.id
+
+                console.log(`Processing payment: ${paymentId}, Amount: ${amount} ${currency}, Product ID: ${productId}`)
 
                 const { error: paymentError } = await supabase
                     .from('payments')
@@ -105,11 +113,9 @@ serve(async (req) => {
                     })
 
                 if (paymentError) {
-                    // We don't want to crash the whole webhook if just the history logging fails, 
-                    // but we should log it for debugging.
                     console.error('Failed to log payment to history:', paymentError.message)
                 } else {
-                    console.log(`Logded payment ${paymentId} for user ${userId}`)
+                    console.log(`Logged payment ${paymentId} for user ${userId}`)
                 }
             }
         }

@@ -47,7 +47,8 @@ Deno.serve(async (req) => {
         }
 
         // 6. Call Dodo Payments API
-        console.log('Calling Dodo Payments API with Product ID:', productId);
+        const dodoBaseUrl = Deno.env.get('DODO_PAYMENTS_BASE_URL') || 'https://test.dodopayments.com'
+        console.log('Calling Dodo Payments API with Product ID:', productId, 'Base URL:', dodoBaseUrl);
 
         const dodoRequestBody = {
             product_cart: [
@@ -67,7 +68,7 @@ Deno.serve(async (req) => {
 
         console.log('Dodo Request Body:', JSON.stringify(dodoRequestBody, null, 2));
 
-        const dodoResponse = await fetch('https://test.dodopayments.com/checkouts', {
+        const dodoResponse = await fetch(`${dodoBaseUrl}/checkouts`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
