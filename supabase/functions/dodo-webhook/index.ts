@@ -19,14 +19,16 @@ serve(async (req) => {
     const webhookTimestamp = req.headers.get('webhook-timestamp')
     const secret = Deno.env.get('DODO_PAYMENTS_WEBHOOK_KEY')
 
-    console.log('Webhook Headers:', {
-        'webhook-signature': signature ? 'present' : 'missing',
-        'webhook-id': webhookId,
-        'webhook-timestamp': webhookTimestamp
+    console.log('[DEBUG] Webhook Initialization:', {
+        hasSignature: !!signature,
+        hasId: !!webhookId,
+        hasTimestamp: !!webhookTimestamp,
+        hasSecret: !!secret,
+        secretPrefix: secret ? `${secret.substring(0, 4)}...` : 'none'
     })
 
     if (!signature || !webhookId || !webhookTimestamp || !secret) {
-        console.error('Missing required headers or secret')
+        console.error('[ERROR] Missing required headers or secret')
         return new Response(JSON.stringify({ error: 'Missing headers or secret' }), { status: 400 })
     }
 
@@ -39,17 +41,19 @@ serve(async (req) => {
             "webhook-timestamp": webhookTimestamp,
             "webhook-signature": signature,
         })
-        console.log('Signature verification successful')
+        console.log('[DEBUG] Signature verification successful')
     } catch (err) {
-        console.error('Signature verification failed:', err.message)
+        console.error('[ERROR] Signature verification failed:', err.message)
+        // Return 401 with details for easier debugging in the short term
         return new Response(JSON.stringify({
             error: 'Invalid signature',
-            details: err.message
-        }), { status: 401 })
+            message: err.message,
+            timestamp: new Date().toISOString()
+        }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const event = JSON.parse(body)
-    console.log('Dodo Webhook Event:', event.type)
+    console.log('[DEBUG] Received Dodo Event:', event.type)
 
     const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
@@ -63,21 +67,25 @@ serve(async (req) => {
             const productId = data.product_id || data.product_cart?.[0]?.product_id
 
             if (userId) {
-                // Map Product ID to Tier
-                console.log(`Received Webhook for User ${userId}. Product ID: ${productId}`)
+                console.log(`[DEBUG] Processing userId: ${userId}, productId: ${productId}`)
 
                 let tier = 'free'
                 let productName = 'Free Plan'
 
-                // Flexible matching for Pro and Max plans
-                if (productId === 'pdt_0NYUy3n4rUmePuUR2J0eF' || productId?.includes('pro')) {
+                const rawAmount = data.total_amount || data.amount || 0
+                const amount = Number(rawAmount) / 100 // Convert from minor units (cents/kobo) to major units
+                const currency = data.currency || 'USD'
+
+                // Robust matching: ID-based OR Amount-based fallback for localized currencies
+                const isProPrice = (currency === 'USD' && amount >= 18) || (currency === 'NGN' && amount >= 25000)
+                const isMaxPrice = (currency === 'USD' && amount >= 45) || (currency === 'NGN' && amount >= 60000)
+
+                if (productId === 'pdt_0NYUy3n4rUmePuUR2J0eF' || productId?.toLowerCase().includes('pro') || (isProPrice && !isMaxPrice)) {
                     tier = 'pro'
                     productName = 'Pro Plan'
-                } else if (productId === 'pdt_0NYUyObQDb5CrAtOTzZiJ' || productId?.includes('max')) {
+                } else if (productId === 'pdt_0NYUyObQDb5CrAtOTzZiJ' || productId?.toLowerCase().includes('max') || isMaxPrice) {
                     tier = 'max'
                     productName = 'Max Plan'
-                } else {
-                    console.warn(`Unrecognized Product ID: ${productId}. Defaulting to Free Plan.`)
                 }
 
                 // 1. Update Profile Subscription
@@ -91,15 +99,10 @@ serve(async (req) => {
                     .eq('id', userId)
 
                 if (profileError) throw profileError
-                console.log(`Updated subscription for user ${userId} to ${tier}`)
+                console.log(`[SUCCESS] Updated user ${userId} to ${tier} tier.`)
 
                 // 2. Log Payment in Billing History
-                const rawAmount = data.total_amount || data.amount || 0
-                const amount = Number(rawAmount) / 100 // Convert from minor units (cents/kobo) to major units
-                const currency = data.currency || 'USD'
                 const paymentId = data.payment_id || data.subscription_id || event.id
-
-                console.log(`Processing payment: ${paymentId}, Amount: ${amount} ${currency}, Product ID: ${productId}`)
 
                 const { error: paymentError } = await supabase
                     .from('payments')
@@ -110,19 +113,15 @@ serve(async (req) => {
                         currency: currency,
                         status: 'succeeded',
                         product_name: productName,
+                        product_id: productId
                     })
 
-                if (paymentError) {
-                    console.error('Failed to log payment to history:', paymentError.message)
-                } else {
-                    console.log(`Logged payment ${paymentId} for user ${userId}`)
-                }
+                if (paymentError) console.error('[ERROR] Failed to log payment:', paymentError.message)
             }
         }
-
         return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     } catch (error) {
-        console.error('Webhook Error:', error.message)
+        console.error('[ERROR] Webhook processing failed:', error.message)
         return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 })
