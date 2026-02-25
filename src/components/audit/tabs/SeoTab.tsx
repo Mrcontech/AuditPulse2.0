@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Info } from "lucide-react";
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { cn } from "@/lib/utils";
 
@@ -14,10 +14,26 @@ export const SeoTab = ({ results }: { results: any }) => {
 
     return (
         <div className="space-y-6">
+            {results.used_heuristic && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-blue-200">On-Page SEO Analysis</p>
+                        <p className="text-xs text-blue-200/60 leading-relaxed">
+                            Complete SERP data was unavailable. This score is an estimate based on our internal technical analysis of on-page factors like meta tags, content depth, and semantic structure.
+                        </p>
+                    </div>
+                </div>
+            )}
             {/* Quick Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-lg overflow-hidden border border-white/[0.06]">
                 <div className="bg-card p-5">
-                    <span className="text-xs text-muted-foreground block mb-1">SEO Score</span>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-muted-foreground block">SEO Score</span>
+                        {results.used_heuristic && (
+                            <span className="text-[8px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">Estimated</span>
+                        )}
+                    </div>
                     <span className="text-2xl font-semibold text-white tabular-nums">{results.seo_score ?? "-"}</span>
                 </div>
                 <div className="bg-card p-5">
@@ -69,7 +85,7 @@ export const SeoTab = ({ results }: { results: any }) => {
                 </div>
             )}
 
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-2 gap-6">
                 {/* Index Presence */}
                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
                     <h3 className="text-sm font-medium text-white mb-4">Index Presence</h3>
@@ -86,6 +102,57 @@ export const SeoTab = ({ results }: { results: any }) => {
                         {!results.keywords?.length && (
                             <p className="text-sm text-muted-foreground">No indexing data found.</p>
                         )}
+                    </div>
+                </div>
+
+                {/* Technical SEO & Structure */}
+                <div className="bg-card border border-white/[0.06] rounded-lg p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-medium text-white">Technical SEO & Structure</h3>
+                        <div className="flex gap-2">
+                            <span className="text-[9px] bg-white/[0.04] px-1.5 py-0.5 rounded text-muted-foreground uppercase">{results.technical_seo?.lang || "N/A"}</span>
+                            <span className="text-[9px] bg-white/[0.04] px-1.5 py-0.5 rounded text-muted-foreground uppercase">{results.technical_seo?.charset || "UTF-8"}</span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Content Depth</p>
+                            <p className="text-lg font-semibold text-white">{results.technical_seo?.wordCount?.toLocaleString() || 0} <span className="text-[10px] font-normal text-muted-foreground">WORDS</span></p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Headings</p>
+                            <div className="flex gap-4 mt-1">
+                                <div className="text-center">
+                                    <p className={`text-xs font-bold ${results.technical_seo?.h1Count === 1 ? 'text-green-400' : 'text-yellow-500'}`}>{results.technical_seo?.h1Count || 0}</p>
+                                    <p className="text-[8px] text-muted-foreground uppercase">H1</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-bold text-white">{results.technical_seo?.imgAltCount || 0}</p>
+                                    <p className="text-[8px] text-muted-foreground uppercase">Alt Tags</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        {[
+                            { label: "OG Tags", value: results.technical_seo?.hasOgTags },
+                            { label: "Twitter Cards", value: results.technical_seo?.hasTwitterTags },
+                            { label: "Canonical URL", value: !!results.technical_seo?.canonical },
+                            { label: "Favicon", value: results.technical_seo?.hasFavicon },
+                            { label: "Viewport Meta", value: results.technical_seo?.hasViewport },
+                            { label: "Schema (JSON-LD)", value: results.technical_seo?.hasJSONLD },
+                        ].map((item, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.02] last:border-0">
+                                <span className="text-muted-foreground">{item.label}</span>
+                                <div className={cn(
+                                    "px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-tight",
+                                    item.value ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+                                )}>
+                                    {item.value ? "Detect" : "Missing"}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

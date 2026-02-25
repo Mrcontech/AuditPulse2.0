@@ -74,8 +74,12 @@ export async function getPageSpeedMetrics(url: string, apiKey: string) {
             accessibility_score: Math.round((categories.accessibility?.score ?? 0) * 100),
             best_practices_score: Math.round((categories['best-practices']?.score ?? 0) * 100),
             lcp: (loading.LARGEST_CONTENTFUL_PAINT_MS?.percentile || lighthouse['largest-contentful-paint']?.numericValue || 0) / 1000,
+            fcp: (loading.FIRST_CONTENTFUL_PAINT_MS?.percentile || lighthouse['first-contentful-paint']?.numericValue || 0) / 1000,
+            ttfb: (loading.EXPERIMENTAL_TIME_TO_FIRST_BYTE?.percentile || lighthouse['server-response-time']?.numericValue || 0) / 1000,
             cls: loading.CUMULATIVE_LAYOUT_SHIFT_SCORE?.percentile / 100 || lighthouse['cumulative-layout-shift']?.numericValue || 0,
             inp: loading.INTERACTION_TO_NEXT_PAINT?.percentile || lighthouse['total-blocking-time']?.numericValue || 0,
+            hasModernImages: lighthouse['modern-image-formats']?.score === 1,
+            hasCompression: lighthouse['uses-text-compression']?.score === 1,
             errorType: data.errorType,
             status: data.status
         };

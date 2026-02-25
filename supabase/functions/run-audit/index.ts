@@ -9,6 +9,7 @@ import { getSerpData } from './serp.ts'
 import { getMarketInsights, getCompetitors } from './tavily.ts'
 import { analyzeWithGemini, discoverNiche } from './gemini.ts'
 import { checkSecurity } from './security.ts'
+import { calculateHeuristicPerformance, calculateHeuristicSeo } from './heuristics.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -187,7 +188,26 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
                 broken_links: rawData.security?.broken_links || [],
                 crawl_data: rawData.crawlData || [],
                 pages_crawled: rawData.crawlData?.length || 0,
-                pagespeed_available: mobile.available ?? false
+                pagespeed_available: mobile.available ?? false,
+                technical_performance: {
+                    ...(rawData.crawlData?.[0]?.technical?.performance || {}),
+                    fcp: mobile.fcp || 0,
+                    ttfb: mobile.ttfb || 0,
+                    hasModernImages: mobile.hasModernImages || false,
+                    hasCompression: mobile.hasCompression || false
+                },
+                technical_seo: {
+                    ...(rawData.crawlData?.[0]?.technical?.seo || {})
+                },
+                used_heuristic: !mobile.available
+            }
+
+            // FALLBACK SCORING: If PageSpeed failed, use heuristics from crawler data
+            if (!mobile.available) {
+                console.log(`[${auditId}] PageSpeed unavailable. Calculating heuristic fallback scores...`);
+                resultsPayload.performance_score = calculateHeuristicPerformance(resultsPayload.technical_performance);
+                resultsPayload.performance_score_mobile = resultsPayload.performance_score;
+                resultsPayload.seo_score = calculateHeuristicSeo(resultsPayload.technical_seo);
             }
 
             const { error: insertError } = await supabase.from('audit_results').insert(resultsPayload).select()

@@ -114,6 +114,37 @@ function extractLinks(html: string, baseUrl: URL): string[] {
 }
 
 /**
+ * Analyze HTML for technical Performance and SEO metrics.
+ */
+function analyzeTechnicalHTML(html: string): { performance: any, seo: any } {
+    const perf: any = {
+        htmlSizeKb: Math.round(html.length / 1024),
+        scriptCount: (html.match(/<script/gi) || []).length,
+        styleCount: (html.match(/<link[^>]*rel=["']stylesheet["']/gi) || []).length,
+        imageCount: (html.match(/<img/gi) || []).length,
+        renderBlockingScripts: (html.match(/<script(?![^>]*async)(?![^>]*defer)[^>]*src=/gi) || []).length,
+        lazyImages: (html.match(/<img[^>]*loading=["']lazy["']/gi) || []).length,
+        imagesWithDimensions: (html.match(/<img[^>]*width=[^>]*height=/gi) || []).length
+    }
+
+    const seo: any = {
+        hasOgTags: /property=["']og:/i.test(html),
+        hasTwitterTags: /name=["']twitter:/i.test(html),
+        canonical: (html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']*)["']/i) || [])[1] || null,
+        hasFavicon: /rel=["'](?:shortcut )?icon["']/i.test(html),
+        hasViewport: /name=["']viewport["']/i.test(html),
+        lang: (html.match(/<html[^>]*lang=["']([^"']*)["']/i) || [])[1] || null,
+        charset: (html.match(/<meta[^>]*charset=["']([^"']*)["']/i) || [])[1] || null,
+        h1Count: (html.match(/<h1/gi) || []).length,
+        hasJSONLD: /<script[^>]*type=["']application\/ld\+json["']/i.test(html),
+        wordCount: html.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(w => w.length > 1).length,
+        imgAltCount: (html.match(/<img[^>]*alt=["'][^"']+["']/gi) || []).length,
+    }
+
+    return { performance: perf, seo: seo }
+}
+
+/**
  * Fetch a single page: returns HTML, status, title, and markdown in one pass.
  */
 async function fetchPage(url: string): Promise<{
@@ -124,6 +155,7 @@ async function fetchPage(url: string): Promise<{
     description: string;
     keywords: string;
     rawHtml: string;
+    technical: { performance: any, seo: any };
 }> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), PAGE_FETCH_TIMEOUT_MS)
@@ -143,7 +175,7 @@ async function fetchPage(url: string): Promise<{
 
         const status = response.status
         if (status >= 400) {
-            return { url, status, markdown: '', title: '', rawHtml: '' }
+            return { url, status, markdown: '', title: '', description: '', keywords: '', rawHtml: '', technical: { performance: {}, seo: {} } }
         }
 
         const html = await response.text()
@@ -165,11 +197,14 @@ async function fetchPage(url: string): Promise<{
         // Convert to markdown
         const markdown = htmlToMarkdown(html)
 
-        return { url, status, markdown, title, description, keywords, rawHtml: html }
+        // TECHNICAL ANALYSIS
+        const technical = analyzeTechnicalHTML(html);
+
+        return { url, status, markdown, title, description, keywords, rawHtml: html, technical }
     } catch (err) {
         clearTimeout(timeoutId)
         console.warn(`[Crawler] Failed to fetch ${url}: ${err.message}`)
-        return { url, status: 0, markdown: '', title: '', description: '', keywords: '', rawHtml: '' }
+        return { url, status: 0, markdown: '', title: '', description: '', keywords: '', rawHtml: '', technical: { performance: {}, seo: {} } }
     }
 }
 
@@ -230,6 +265,7 @@ export async function crawlSite(url: string): Promise<any[]> {
                 title: page.title,
                 description: page.description,
                 keywords: page.keywords,
+                technical: page.technical,
             })
 
             if (results.length >= MAX_PAGES) break

@@ -59,7 +59,19 @@ export const PerformanceTab = ({ results }: { results: any }) => {
 
     return (
         <div className="space-y-6">
-            {results.pagespeed_available === false && (
+            {results.used_heuristic && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-blue-200">On-Page Heuristic Analysis</p>
+                        <p className="text-xs text-blue-200/60 leading-relaxed">
+                            Google PageSpeed Insights could not be reached. We've performed a deep on-page technical analysis to provide these estimated scores based on your site's structure and assets.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {!results.used_heuristic && results.pagespeed_available === false && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                     <div className="space-y-1">
@@ -150,7 +162,12 @@ export const PerformanceTab = ({ results }: { results: any }) => {
                 <div className="mt-4 space-y-2">
                     {scoreData.map((item, i) => (
                         <div key={i} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{item.name}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">{item.name}</span>
+                                {results.used_heuristic && (item.name === 'Performance' || item.name === 'SEO') && (
+                                    <span className="text-[8px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">Estimated</span>
+                                )}
+                            </div>
                             <span className="font-medium text-white">{Math.round(Number(item.value))}/100</span>
                         </div>
                     ))}
@@ -158,21 +175,68 @@ export const PerformanceTab = ({ results }: { results: any }) => {
             </div>
 
             {/* Recommendations */}
-            <div className="bg-card border border-white/[0.06] rounded-lg p-5">
-                <h3 className="text-sm font-medium text-white mb-4">Optimization Opportunities</h3>
-                <div className="space-y-3">
-                    {results.strategic_recommendations?.slice(0, 3).map((rec: any, i: number) => (
-                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                            <div>
-                                <p className="text-sm font-medium text-white">{rec.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{rec.description}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-card border border-white/[0.06] rounded-lg p-5">
+                    <h3 className="text-sm font-medium text-white mb-4">Optimization Opportunities</h3>
+                    <div className="space-y-3">
+                        {results.strategic_recommendations?.slice(0, 3).map((rec: any, i: number) => (
+                            <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-medium text-white">{rec.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{rec.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {(!results.strategic_recommendations || results.strategic_recommendations.length === 0) && (
+                            <p className="text-sm text-muted-foreground">No specific recommendations. Your site is performing well.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Technical Inventory */}
+                <div className="bg-card border border-white/[0.06] rounded-lg p-5">
+                    <h3 className="text-sm font-medium text-white mb-4">Technical Inventory</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Payload Size</p>
+                            <p className="text-lg font-semibold text-white">{results.technical_performance?.htmlSizeKb || "?"} KB <span className="text-[10px] font-normal text-muted-foreground">HTML</span></p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Server Response</p>
+                            <p className="text-lg font-semibold text-white">{(results.technical_performance?.ttfb || 0).toFixed(2)}s <span className="text-[10px] font-normal text-muted-foreground">TTFB</span></p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Total Assets</p>
+                            <div className="flex gap-3 mt-1">
+                                <div className="text-center">
+                                    <p className="text-xs font-bold text-white">{results.technical_performance?.scriptCount || 0}</p>
+                                    <p className="text-[8px] text-muted-foreground uppercase">JS</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-bold text-white">{results.technical_performance?.styleCount || 0}</p>
+                                    <p className="text-[8px] text-muted-foreground uppercase">CSS</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-bold text-white">{results.technical_performance?.imageCount || 0}</p>
+                                    <p className="text-[8px] text-muted-foreground uppercase">IMG</p>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                    {(!results.strategic_recommendations || results.strategic_recommendations.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No specific recommendations. Your site is performing well.</p>
-                    )}
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Modern Standards</p>
+                            <div className="flex flex-col gap-1.5 mt-1">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${results.technical_performance?.hasCompression ? 'bg-green-500' : 'bg-red-500'}`} />
+                                    <span className="text-[10px] text-white/80">Compression</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${results.technical_performance?.hasModernImages ? 'bg-green-500' : 'bg-red-500'}`} />
+                                    <span className="text-[10px] text-white/80">WebP/AVIF</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
