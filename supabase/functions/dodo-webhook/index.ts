@@ -77,8 +77,17 @@ serve(async (req) => {
                 const currency = data.currency || 'USD'
 
                 // Robust matching: ID-based OR Amount-based fallback for localized currencies
-                const isProPrice = (currency === 'USD' && amount >= 18) || (currency === 'NGN' && amount >= 25000)
-                const isMaxPrice = (currency === 'USD' && amount >= 45) || (currency === 'NGN' && amount >= 60000)
+                const isProPrice =
+                    (currency === 'USD' && amount >= 18) ||
+                    (currency === 'NGN' && amount >= 25000) ||
+                    (currency === 'GBP' && amount >= 14) ||
+                    (currency === 'EUR' && amount >= 17);
+
+                const isMaxPrice =
+                    (currency === 'USD' && amount >= 45) ||
+                    (currency === 'NGN' && amount >= 60000) ||
+                    (currency === 'GBP' && amount >= 39) ||
+                    (currency === 'EUR' && amount >= 44);
 
                 if (productId === 'pdt_0NYUy3n4rUmePuUR2J0eF' || productId?.toLowerCase().includes('pro') || (isProPrice && !isMaxPrice)) {
                     tier = 'pro'

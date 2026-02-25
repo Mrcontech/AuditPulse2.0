@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
             customer: {
                 email: customerEmail,
             },
-            return_url: returnUrl || `${req.headers.get('origin') || 'http://localhost:5173'}/dashboard`,
+            return_url: returnUrl || `${req.headers.get('origin') || 'http://localhost:5173'}/dashboard?success=true`,
             metadata: {
                 userId: userId,
             },

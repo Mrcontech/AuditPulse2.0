@@ -3,13 +3,14 @@ import { AuditList } from "@/components/dashboard/AuditList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Globe, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ComparisonModal } from "@/components/dashboard/ComparisonModal";
+import { CongratulationsModal } from "@/components/dashboard/CongratulationsModal";
 import { Swords } from "lucide-react";
 
 export default function Dashboard() {
@@ -17,7 +18,20 @@ export default function Dashboard() {
     const [url, setUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+    const [isCongratsModalOpen, setIsCongratsModalOpen] = useState(false);
     const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Success detection logic
+    useEffect(() => {
+        if (searchParams.get('success') === 'true') {
+            setIsCongratsModalOpen(true);
+            // Clear the param immediately from the URL
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('success');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
 
     const { data: stats, isLoading } = useQuery({
         queryKey: ["audits-stats"],
@@ -171,6 +185,11 @@ export default function Dashboard() {
                     <ComparisonModal
                         isOpen={isCompareModalOpen}
                         onClose={() => setIsCompareModalOpen(false)}
+                    />
+
+                    <CongratulationsModal
+                        isOpen={isCongratsModalOpen}
+                        onClose={() => setIsCongratsModalOpen(false)}
                     />
 
                     {/* Stats Grid - Linear style with gap-px */}
