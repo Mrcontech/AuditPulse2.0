@@ -40,13 +40,41 @@ export const SeoTab = ({ results }: { results: any }) => {
                     <span className="text-xs text-muted-foreground block mb-1">Indexed Pages</span>
                     <span className="text-2xl font-semibold text-white tabular-nums">{results.total_results || results.keywords?.length || 0}</span>
                 </div>
+
+                {results.missing_money?.unindexed_pages !== undefined ? (
+                    <div className={cn(
+                        "bg-card p-5 relative group overflow-hidden",
+                        results.missing_money.unindexed_pages.length > 0 && "border-l-2 border-red-500/40"
+                    )}>
+                        {results.missing_money.unindexed_pages.length > 0 && (
+                            <div className="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors" />
+                        )}
+                        <span className={cn(
+                            "text-xs font-medium block mb-1 relative z-10",
+                            results.missing_money.unindexed_pages.length > 0 ? "text-red-400" : "text-green-400"
+                        )}>
+                            Unindexed Pages
+                        </span>
+                        <span className="text-2xl font-semibold text-white tabular-nums relative z-10">
+                            {results.missing_money.unindexed_pages.length}
+                        </span>
+                        <p className="text-[9px] text-muted-foreground mt-1 relative z-10">
+                            {results.missing_money.unindexed_pages.length > 0
+                                ? `${results.missing_money.unindexed_pages.length} page(s) not found in Google`
+                                : 'All crawled pages are indexed'
+                            }
+                        </p>
+                    </div>
+                ) : (
+                    <div className="bg-card p-5">
+                        <span className="text-xs text-muted-foreground block mb-1">Content Gaps</span>
+                        <span className="text-2xl font-semibold text-white tabular-nums">{results.content_gaps?.length || 0}</span>
+                    </div>
+                )}
+
                 <div className="bg-card p-5">
-                    <span className="text-xs text-muted-foreground block mb-1">Target Keywords</span>
-                    <span className="text-2xl font-semibold text-white tabular-nums">{results.strategic_keywords?.length || 0}</span>
-                </div>
-                <div className="bg-card p-5">
-                    <span className="text-xs text-muted-foreground block mb-1">Content Gaps</span>
-                    <span className="text-2xl font-semibold text-white tabular-nums">{results.content_gaps?.length || 0}</span>
+                    <span className="text-xs text-muted-foreground block mb-1">Target Keyword</span>
+                    <span className="text-sm font-semibold text-white leading-tight min-h-[32px] flex items-end">{results.content_engine?.target_keyword || '—'}</span>
                 </div>
             </div>
 
@@ -156,26 +184,32 @@ export const SeoTab = ({ results }: { results: any }) => {
                     </div>
                 </div>
 
-                {/* Target Keywords (AI Recommendations) */}
+                {/* Target Keywords (Real Data Insights) */}
                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
-                    <h3 className="text-sm font-medium text-white mb-4">Target Keywords</h3>
-                    <div className="space-y-2 max-h-[350px] overflow-y-auto">
-                        {(results.seo_analysis?.strategic_keywords || results.strategic_keywords)?.map((item: any, i: number) => (
-                            <div key={i} className="flex flex-col gap-1 py-2 border-b border-white/[0.04] last:border-0">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/50 mt-0.5 shrink-0" />
-                                    <p className="text-sm font-medium text-white/90">{typeof item === 'string' ? item : item.keyword}</p>
-                                </div>
-                                {item.intent && (
-                                    <div className="flex gap-2 pl-4">
-                                        <span className="text-[9px] text-blue-400/60 uppercase font-bold tracking-widest">{item.intent}</span>
-                                        {item.rationale && <span className="text-[9px] text-muted-foreground italic">— {item.rationale}</span>}
-                                    </div>
+                    <h3 className="text-sm font-medium text-white mb-4">Keyword Insights</h3>
+                    <div className="space-y-3 max-h-[350px] overflow-y-auto">
+                        {results.content_engine?.target_keyword && (
+                            <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                                <p className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider mb-1">AI-Recommended Target Keyword</p>
+                                <p className="text-sm font-medium text-white">{results.content_engine.target_keyword}</p>
+                                {results.content_engine.long_tail_topic && (
+                                    <p className="text-xs text-muted-foreground mt-1.5">Article idea: {results.content_engine.long_tail_topic}</p>
                                 )}
                             </div>
-                        ))}
-                        {(!results.strategic_keywords?.length && !results.seo_analysis?.strategic_keywords?.length) && (
-                            <p className="text-sm text-muted-foreground">Generating high-leverage keywords...</p>
+                        )}
+                        {results.keywords?.length > 0 && (
+                            <div>
+                                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Indexed in Google</p>
+                                {results.keywords.slice(0, 6).map((k: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0 text-white/90">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500/50 shrink-0" />
+                                        <p className="text-sm truncate">{k.title}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {(!results.content_engine?.target_keyword && !results.keywords?.length) && (
+                            <p className="text-sm text-muted-foreground">No keyword data available for this audit.</p>
                         )}
                     </div>
                 </div>

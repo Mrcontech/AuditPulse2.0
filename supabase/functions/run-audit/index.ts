@@ -4,7 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { crawlSite } from './crawler.ts'
-import { getPageSpeedMetrics } from './pagespeed.ts'
+import { getPageSpeedMetrics, triggerDebugBear, checkDebugBearResult } from './pagespeed.ts'
 import { getSerpData } from './serp.ts'
 import { getMarketInsights, getCompetitors } from './tavily.ts'
 import { analyzeWithGemini, discoverNiche } from './gemini.ts'
@@ -88,15 +88,19 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
                 progress_label: 'Stage 1/3: Collecting site content and performance metrics...'
             }).eq('id', auditId)
 
-            const [crawlData, performance] = await Promise.all([
+            // Fire DebugBear trigger immediately (fire-and-forget) alongside crawl + PSI
+            const [crawlData, performance, debugBearAnalysisId] = await Promise.all([
                 crawlSite(url),
-                getPageSpeedMetrics(url, Deno.env.get('PAGESPEED_API_KEY') ?? '')
+                getPageSpeedMetrics(url, Deno.env.get('PAGESPEED_API_KEY') ?? ''),
+                triggerDebugBear(url, Deno.env.get('DEBUGBEAR_API_KEY') ?? '')
             ])
+
+            console.log(`[${auditId}] PSI available: ${performance.available}, DebugBear analysis ID: ${debugBearAnalysisId}`);
 
             await supabase.from('audits').update({
                 progress: 35,
                 progress_label: 'Collection complete. Moving to market research...',
-                raw_data: { crawlData, performance, pagespeed_available: performance.available }
+                raw_data: { crawlData, performance, pagespeed_available: performance.available, debugBearAnalysisId }
             }).eq('id', auditId)
 
             await supabase.rpc('enqueue_audit_stage', { p_audit_id: auditId, p_url: url, p_stage: 'research' })
@@ -153,6 +157,49 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
 
             console.log(`[${auditId}] Gemini synthesis complete.`)
 
+            // --- ADVANCED FOUNDER FEATURES (NATIVE APIs) ---
+            const serpApiKey = Deno.env.get('SERP_API_KEY') || '';
+            const tavilyApiKey = Deno.env.get('TAVILY_API_KEY') || '';
+            const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || '';
+            let competitorXray = {};
+            let contentEngine = {};
+            let missingMoney = {};
+
+            if (serpApiKey || tavilyApiKey || geminiApiKey) {
+                console.log(`[${auditId}] Core APIs found, running Advanced Founder Features...`);
+                try {
+                    // 1. Determine target competitor
+                    const competitors = rawData.competitors || [];
+                    let topCompetitor = null;
+                    if (competitors.length > 0 && competitors[0].url) {
+                        try { topCompetitor = new URL(competitors[0].url).hostname; } catch (e) { }
+                    }
+
+                    // 2. Gather URLs for Missing Money Scanner (top 3 crawled HTML pages)
+                    const crawledPages = (rawData.crawlData || [])
+                        .slice(0, 3)
+                        .map((p: any) => p.url);
+
+                    const [xrayResult, contentResult, missingResult] = await Promise.all([
+                        topCompetitor ? import('./founder_features.ts').then(m => m.runCompetitorXRay(topCompetitor, serpApiKey, tavilyApiKey, geminiApiKey)) : Promise.resolve({ error: "No top competitor found" }),
+                        import('./founder_features.ts').then(m => m.runContentEngine(domain, tavilyApiKey, geminiApiKey, rawData.crawlData)),
+                        import('./founder_features.ts').then(m => m.runMissingMoneyScanner(domain, crawledPages, serpApiKey, geminiApiKey))
+                    ]);
+
+                    competitorXray = xrayResult;
+                    contentEngine = contentResult;
+                    missingMoney = missingResult;
+                    console.log(`[${auditId}] Advanced Founder Features complete.`);
+                } catch (ferr: any) {
+                    console.error(`[${auditId}] Founder features failed: ${ferr.message}`);
+                    missingMoney = { error: ferr.message };
+                }
+            } else {
+                console.log(`[${auditId}] Core APIs are missing.`);
+                missingMoney = { error: "Required API keys are missing" };
+            }
+            // ------------------------------------------
+
             const mobile = rawData.performance?.mobile || {}
 
             const resultsPayload = {
@@ -199,12 +246,42 @@ async function processAuditStage(supabase: any, url: string, auditId: string, st
                 technical_seo: {
                     ...(rawData.crawlData?.[0]?.technical?.seo || {})
                 },
-                used_heuristic: !mobile.available
+                used_heuristic: !mobile.available,
+                competitor_xray: competitorXray,
+                content_engine: contentEngine,
+                missing_money: missingMoney
             }
 
-            // FALLBACK SCORING: If PageSpeed failed, use heuristics from crawler data
-            if (!mobile.available) {
-                console.log(`[${auditId}] PageSpeed unavailable. Calculating heuristic fallback scores...`);
+            // FALLBACK: If PSI failed, try DebugBear (which was triggered minutes ago)
+            if (!mobile.available && rawData.debugBearAnalysisId) {
+                console.log(`[${auditId}] PSI unavailable. Checking DebugBear analysis ${rawData.debugBearAnalysisId}...`);
+                const dbResult = await checkDebugBearResult(
+                    rawData.debugBearAnalysisId,
+                    Deno.env.get('DEBUGBEAR_API_KEY') ?? '',
+                    30000 // 30s max poll in synthesis (analysis has been running for minutes)
+                );
+                if (dbResult.available) {
+                    console.log(`[${auditId}] DebugBear fallback SUCCESS! Score: ${dbResult.score}`);
+                    resultsPayload.performance_score = dbResult.score;
+                    resultsPayload.performance_score_mobile = dbResult.score;
+                    resultsPayload.seo_score = dbResult.seo_score || resultsPayload.seo_score;
+                    resultsPayload.accessibility_score = dbResult.accessibility_score || resultsPayload.accessibility_score;
+                    resultsPayload.best_practices_score = dbResult.best_practices_score || resultsPayload.best_practices_score;
+                    resultsPayload.lcp_mobile = dbResult.lcp || 0;
+                    resultsPayload.lcp_desktop = dbResult.lcp || 0;
+                    resultsPayload.cls_mobile = dbResult.cls || 0;
+                    resultsPayload.cls_desktop = dbResult.cls || 0;
+                    resultsPayload.pagespeed_available = true;
+                    resultsPayload.used_heuristic = false;
+                } else {
+                    console.log(`[${auditId}] DebugBear also unavailable. Falling back to heuristics...`);
+                    resultsPayload.performance_score = calculateHeuristicPerformance(resultsPayload.technical_performance);
+                    resultsPayload.performance_score_mobile = resultsPayload.performance_score;
+                    resultsPayload.seo_score = calculateHeuristicSeo(resultsPayload.technical_seo);
+                }
+            } else if (!mobile.available) {
+                // No DebugBear analysis ID, go straight to heuristics
+                console.log(`[${auditId}] PSI unavailable, no DebugBear. Using heuristic fallback...`);
                 resultsPayload.performance_score = calculateHeuristicPerformance(resultsPayload.technical_performance);
                 resultsPayload.performance_score_mobile = resultsPayload.performance_score;
                 resultsPayload.seo_score = calculateHeuristicSeo(resultsPayload.technical_seo);

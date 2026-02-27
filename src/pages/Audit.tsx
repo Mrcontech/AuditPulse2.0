@@ -493,7 +493,7 @@ export default function Audit() {
 
                             <TabsContent value="checklist" className="outline-none">
                                 <ChecklistTab
-                                    recommendations={results?.strategic_recommendations || []}
+                                    results={results}
                                 />
                             </TabsContent>
                         </Tabs>

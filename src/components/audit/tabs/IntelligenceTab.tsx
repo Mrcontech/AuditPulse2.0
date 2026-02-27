@@ -1,4 +1,4 @@
-import { ExternalLink, TrendingUp, Target, AlertTriangle, Lightbulb, Users, ShieldAlert } from "lucide-react";
+import { ExternalLink, TrendingUp, Target, AlertTriangle, Lightbulb, Users, ShieldAlert, Mail } from "lucide-react";
 
 export const IntelligenceTab = ({ results }: { results: any }) => {
     if (!results) return <div className="text-sm text-muted-foreground">No strategic data available.</div>;
@@ -216,6 +216,84 @@ export const IntelligenceTab = ({ results }: { results: any }) => {
                     </div>
                 </div>
             </div>
+
+            {/* FetchSERP Founder Features */}
+            {(results.competitor_xray?.outreach_targets || results.content_engine?.target_keyword) && (
+                <div className="grid lg:grid-cols-2 gap-6 pt-4 border-t border-white/[0.06]">
+
+                    {/* Competitor X-Ray & Outreach */}
+                    {results.competitor_xray?.outreach_targets && results.competitor_xray.outreach_targets.length > 0 && (
+                        <div className="bg-card border border-white/[0.06] rounded-lg p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Target className="w-4 h-4 text-rose-400" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                                        Competitor X-Ray <span className="text-[9px] bg-rose-500/10 text-rose-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-widest">Premium</span>
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground mt-0.5">Top websites linking to your competitor and author emails for outreach.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {results.competitor_xray.outreach_targets.map((target: any, i: number) => (
+                                    <div key={i} className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium text-white/90">{target.source_domain}</span>
+                                            <a href={target.source_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-white">
+                                                <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                        </div>
+                                        {target.emails && target.emails.length > 0 ? (
+                                            <div className="space-y-1 mt-2">
+                                                {target.emails.slice(0, 3).map((email: string, idx: number) => (
+                                                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <Mail className="w-3 h-3 text-rose-400/60" />
+                                                        <span>{email}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground italic">No public emails found.</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Content Engine */}
+                    {results.content_engine?.target_keyword && (
+                        <div className="bg-card border border-white/[0.06] rounded-lg p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Lightbulb className="w-4 h-4 text-amber-400" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                                        Content Engine <span className="text-[9px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-widest">Premium</span>
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground mt-0.5">"Done-for-you" content targeting high-value missing keywords.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                                    <p className="text-[10px] text-amber-400/80 font-bold uppercase tracking-wider mb-0.5">Target Keyword</p>
+                                    <p className="text-sm font-medium text-white">{results.content_engine.target_keyword}</p>
+                                </div>
+
+                                {results.content_engine.social_post && (
+                                    <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                            <Users className="w-3 h-3" /> Ready-to-post Social Update
+                                        </p>
+                                        <p className="text-xs text-white/80 leading-relaxed whitespace-pre-wrap">{results.content_engine.social_post}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            )}
         </div>
     );
 };

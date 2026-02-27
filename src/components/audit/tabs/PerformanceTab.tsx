@@ -6,6 +6,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export const PerformanceTab = ({ results }: { results: any }) => {
     if (!results) return <div className="text-sm text-muted-foreground">No performance data available.</div>;
@@ -194,47 +195,67 @@ export const PerformanceTab = ({ results }: { results: any }) => {
                     </div>
                 </div>
 
-                {/* Technical Inventory */}
+                {/* Technical Audit Breakdown */}
                 <div className="bg-card border border-white/[0.06] rounded-lg p-5">
-                    <h3 className="text-sm font-medium text-white mb-4">Technical Inventory</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Payload Size</p>
-                            <p className="text-lg font-semibold text-white">{results.technical_performance?.htmlSizeKb || "?"} KB <span className="text-[10px] font-normal text-muted-foreground">HTML</span></p>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-medium text-white">Technical Audit Breakdown</h3>
+                        <div className="flex gap-2">
+                            <span className="text-[9px] bg-white/[0.04] px-1.5 py-0.5 rounded text-muted-foreground uppercase">{results.technical_performance?.htmlSizeKb ? `${results.technical_performance.htmlSizeKb}KB` : "HTML"}</span>
+                            <span className="text-[9px] bg-white/[0.04] px-1.5 py-0.5 rounded text-muted-foreground uppercase">{(results.technical_performance?.ttfb || 0).toFixed(2)}s TTFB</span>
                         </div>
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Server Response</p>
-                            <p className="text-lg font-semibold text-white">{(results.technical_performance?.ttfb || 0).toFixed(2)}s <span className="text-[10px] font-normal text-muted-foreground">TTFB</span></p>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* Core Vital Checks */}
+                        <div className="space-y-2">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">SEO Health Signals</p>
+                            {[
+                                { label: "Unique H1 Header", value: results.technical_seo?.h1Count === 1, details: results.technical_seo?.h1Count > 1 ? "Multiple H1s found" : results.technical_seo?.h1Count === 0 ? "No H1 found" : "Optimized structure" },
+                                { label: "Metadata (OG/Twitter)", value: results.technical_seo?.hasOgTags || results.technical_seo?.hasTwitterTags, details: "Social sharing optimization" },
+                                { label: "Search Schema (JSON-LD)", value: results.technical_seo?.hasJSONLD, details: "Rich snippet eligibility" },
+                                { label: "Canonical Reference", value: !!results.technical_seo?.canonical, details: "Prevents duplicate content issues" },
+                                { label: "Mobile Viewport", value: results.technical_seo?.hasViewport, details: "Mobile-responsive configuration" },
+                                { label: "Site Favicon", value: results.technical_seo?.hasFavicon, details: "Brand identity check" },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center justify-between group py-1.5 border-b border-white/[0.02] last:border-0 text-white/90">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs group-hover:text-white transition-colors">{item.label}</span>
+                                        <span className="text-[9px] text-muted-foreground">{item.details}</span>
+                                    </div>
+                                    <div className={cn(
+                                        "px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-tighter min-w-[60px] text-center",
+                                        item.value ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                    )}>
+                                        {item.value ? "Detect" : "Missing"}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Total Assets</p>
-                            <div className="flex gap-3 mt-1">
-                                <div className="text-center">
-                                    <p className="text-xs font-bold text-white">{results.technical_performance?.scriptCount || 0}</p>
-                                    <p className="text-[8px] text-muted-foreground uppercase">JS</p>
+
+                        {/* Performance Architecture Checks */}
+                        <div className="space-y-2">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-3">Performance Architecture</p>
+                            {[
+                                { label: "HTML Weight Optimized", value: (results.technical_performance?.htmlSizeKb || 0) < 500, details: `${results.technical_performance?.htmlSizeKb || 0}kb document size` },
+                                { label: "Script Efficiency", value: (results.technical_performance?.scriptCount || 0) < 20, details: `${results.technical_performance?.scriptCount || 0} scripts loaded` },
+                                { label: "Render-Blocking Check", value: (results.technical_performance?.renderBlockingScripts || 0) === 0, details: `${results.technical_performance?.renderBlockingScripts || 0} critical blockers` },
+                                { label: "Advanced Image Formats", value: results.technical_performance?.hasModernImages, details: "WebP/AVIF support detection" },
+                                { label: "Text Compression (Gzip)", value: results.technical_performance?.hasCompression, details: "Server-side payload compression" },
+                                { label: "Lazy Loading Assets", value: results.technical_performance?.lazyImages > 0, details: "Non-critical resource deferral" },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center justify-between group py-1.5 border-b border-white/[0.02] last:border-0 text-white/90">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs group-hover:text-white transition-colors">{item.label}</span>
+                                        <span className="text-[9px] text-muted-foreground">{item.details}</span>
+                                    </div>
+                                    <div className={cn(
+                                        "px-2 py-0.5 rounded text-[9px] uppercase font-black tracking-tighter min-w-[60px] text-center",
+                                        item.value ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                    )}>
+                                        {item.value ? "Detect" : "Missing"}
+                                    </div>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-xs font-bold text-white">{results.technical_performance?.styleCount || 0}</p>
-                                    <p className="text-[8px] text-muted-foreground uppercase">CSS</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-xs font-bold text-white">{results.technical_performance?.imageCount || 0}</p>
-                                    <p className="text-[8px] text-muted-foreground uppercase">IMG</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Modern Standards</p>
-                            <div className="flex flex-col gap-1.5 mt-1">
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${results.technical_performance?.hasCompression ? 'bg-green-500' : 'bg-red-500'}`} />
-                                    <span className="text-[10px] text-white/80">Compression</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${results.technical_performance?.hasModernImages ? 'bg-green-500' : 'bg-red-500'}`} />
-                                    <span className="text-[10px] text-white/80">WebP/AVIF</span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
